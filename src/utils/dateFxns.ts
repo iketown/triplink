@@ -1,0 +1,23 @@
+import moment, { Moment } from 'moment'
+
+export const getArrayOfDates = ({
+  first,
+  last
+}: {
+  first: string
+  last: string
+}): Moment[] => {
+  const firstDay = moment(first)
+    .add(1, 'day')
+    .endOf('day')
+  const lastDay = moment(last).endOf('day')
+
+  const array = []
+  let latestDay = firstDay
+  while (latestDay < lastDay) {
+    console.log('adding', latestDay.toISOString())
+    array.push(latestDay)
+    latestDay = latestDay.clone().add(1, 'day')
+  }
+  return array
+}
