@@ -83,7 +83,7 @@ function ResponsiveDrawer(props: ResponsiveDrawerProps) {
   const { container } = props
   const classes = useStyles()
   const theme = useTheme()
-  const user = useAuth()
+  const {user} = useAuth()
   const [routes, setRoutes] = useState(ROUTES.signedOutRoutes)
 
   useEffect(() => {

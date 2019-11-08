@@ -10,8 +10,12 @@ import {
 } from "@material-ui/core"
 import { MdInfo } from "react-icons/md"
 
-const MiniText = styled.pre`
-  font-size: ${p => p.zoom * 10}px;
+interface MiniTextProps {
+  zoom?: number
+}
+
+const MiniText = styled.pre<MiniTextProps>`
+  font-size: ${p => p.zoom ? p.zoom * 10 : 10}px;
   color: green;
 `
 const YellowBox = styled.div`
@@ -23,7 +27,7 @@ const TopRow = styled.div`
   display: flex;
   justify-content: space-between;
 `
-function ShowMe({ obj, name, noModal }) {
+function ShowMe({ obj, name, noModal }:{obj?:Object, name:string, noModal?:boolean}) {
   const [open, setOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   if (noModal)
@@ -36,7 +40,7 @@ function ShowMe({ obj, name, noModal }) {
             <Button onClick={() => setZoom(old => old + 0.5)}>+</Button>
           </div>
         </TopRow>
-        <MiniText zoom={zoom}>{JSON.stringify(obj, 0, 2)}</MiniText>
+        <MiniText zoom={zoom}>{JSON.stringify(obj, null, 2)}</MiniText>
       </YellowBox>
     )
   return (
@@ -62,7 +66,7 @@ function ShowMe({ obj, name, noModal }) {
         <DialogTitle>{name}</DialogTitle>
         <DialogContent>
           <div>
-            <MiniText>{JSON.stringify(obj, 0, 2)}</MiniText>
+            <MiniText>{JSON.stringify(obj, null, 2)}</MiniText>
           </div>
         </DialogContent>
       </Dialog>

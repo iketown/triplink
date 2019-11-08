@@ -6,7 +6,10 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemAvatar,
-  Collapse
+  Collapse,
+  Typography,
+  Button,
+  Divider
 } from '@material-ui/core'
 import { StarBorder, Add, ArrowDropDown } from '@material-ui/icons'
 import { useFirebaseCtx } from '../Firebase'
@@ -15,83 +18,72 @@ import { Tour } from '../Tours/Tours'
 import ShowMe from '../../utils/ShowMe'
 import moment, { Moment } from 'moment'
 import { getArrayOfDates } from '../../utils/dateFxns'
-type TourEvent = {
-  id: string
-  startDateTime: string
-  endDateTime: string
-  city: string
-  state: string
-  country: string
-}
+import { useEvents, TourEvent } from './useEvents'
+import { useDialogCtx } from '../Dialogs/DialogCtx'
 
 export const TourEvents = ({ tour }: { tour: Tour }) => {
   const { firestore } = useFirebaseCtx()
-  const [events, setEvents] = useState<TourEvent[]>([])
-  const user = useAuth()
-  const eventsObj = useMemo(() => {
-    const _eventsObj = events
-      .sort((a: TourEvent, b: TourEvent) => {
-        if (a.startDateTime < b.startDateTime) return -1
-        return 1
-      })
-      .reduce(
-        (
-          obj: { [key: string]: TourEvent[] },
-          event: TourEvent,
-          index: number
-        ) => {
-          const date = moment(event.startDateTime).format('MM/DD')
-          if (!!obj[date]) obj[date].push(event)
-          else obj[date] = [event]
-          return obj
-        },
-        {}
-      )
-    return _eventsObj
-  }, [events])
-  useEffect(() => {
-    if (user) {
-      const eventsRef = firestore.collection(`tours/${tour.id}/events`)
-      const unsubscribe = eventsRef.onSnapshot(querySnapshot => {
-        const _events: TourEvent[] = []
-        querySnapshot.forEach(doc => {
-          // @ts-ignore
-          _events.push({ ...doc.data(), id: doc.id })
-        })
-        setEvents(_events)
-      })
-      return unsubscribe
-    }
-  }, [firestore, tour.id, user])
+  const { user } = useAuth()
+  const { events, eventsObj } = useEvents(tour.id)
+  const { dispatch } = useDialogCtx()
+  const handleCreateEvent = () => {
+    dispatch({
+      type: 'CREATE_EVENT',
+      initialValues: { startDate: tour.startDate, tourId: tour.id }
+    })
+  }
+  if (!events.length)
+    return (
+      <CardContent style={{ textAlign: 'center' }}>
+        <Typography gutterBottom>No Events</Typography>
+        <Button variant="contained" color="primary" onClick={handleCreateEvent}>
+          Create Event
+        </Button>
+      </CardContent>
+    )
   return (
     <CardContent>
       TOUR EVENTS
       <List dense>
-        {Object.entries(eventsObj).map(([date, eventArr], index, array) => {
+        {Object.entries(eventsObj).map(([date, eventArr], index) => {
           const isFirst = index === 0
           const isLast = index === Object.keys(eventsObj).length - 1
           const nextDate = Object.values(eventsObj)[index + 1]
-          const nextDateTime = nextDate ? nextDate[0].startDateTime : null
+          const nextDateTime = nextDate ? nextDate[0].startDate : null
           const isGigNextDay =
             nextDateTime &&
-            moment(eventArr[0].startDateTime)
+            moment(eventArr[0].startDate)
               .endOf('day')
               .add(1, 'day')
               .isSameOrAfter(nextDateTime)
           return (
             <Fragment key={date}>
-              {isFirst && <TourEventSpacerListItem key={date + 'before'} />}
-
-              <TourEventListItem key={date} date={date} eventArr={eventArr} />
-
+              {isFirst && (
+                <TourEventSpacerListItem
+                  tourId={tour.id}
+                  key={date + 'before'}
+                  date={moment(eventArr[0].startDate).subtract(1, 'day')}
+                />
+              )}
+              {
+                //@ts-ignore
+                <TourEventListItem date={date} eventArr={eventArr} />
+              }
               {!isLast && !isGigNextDay && nextDateTime && (
                 <TourEventSpacerDates
+                  tourId={tour.id}
                   key={date + 'inBetween'}
-                  mustBeAfter={eventArr[0].startDateTime}
+                  mustBeAfter={eventArr[0].startDate}
                   mustBeBefore={nextDateTime}
                 />
               )}
-              {isLast && <TourEventSpacerListItem key={date + 'after'} />}
+              {isLast && (
+                <TourEventSpacerListItem
+                  tourId={tour.id}
+                  key={date + 'after'}
+                  date={moment(eventArr[0].startDate).add(1, 'day')}
+                />
+              )}
             </Fragment>
           )
         })}
@@ -100,36 +92,86 @@ export const TourEvents = ({ tour }: { tour: Tour }) => {
   )
 }
 
-export default TourEvents
-
-const TourEventListItem = ({
+function TourEventListItem({
   date,
   eventArr
 }: {
   date: string
   eventArr: TourEvent[]
-}) => {
-  return (
-    <ListItem divider>
-      <ListItemAvatar>
-        <StarBorder />
-      </ListItemAvatar>
-      <ListItemText
-        primary={`${date} • ${eventArr[0].city} ${eventArr[0].state}`}
+}) {
+  return eventArr.map((event, index) => {
+    return (
+      <TourEventSingleListItem
+        key={event.id}
+        event={event}
+        date={date}
+        dividerBottom={index + 1 === eventArr.length}
       />
-    </ListItem>
+    )
+  })
+}
+
+const TourEventSingleListItem = ({
+  event,
+  date,
+  dividerBottom = true
+}: {
+  event: TourEvent
+  date: string
+  dividerBottom?: boolean
+}) => {
+  const { dispatch } = useDialogCtx()
+  const handleEditEvent = () => {
+    const { locBasic, ...eventInfo } = event
+    const { venueName, locShortName } = locBasic
+    const initialValues = {
+      ...eventInfo,
+      location: locBasic,
+      venueName,
+      locShortName
+    }
+    dispatch({ type: 'EDIT_EVENT', initialValues })
+  }
+  return (
+    <>
+      <ListItem button onClick={handleEditEvent}>
+        <Fragment key={event.id}>
+          <ListItemAvatar>
+            <StarBorder />
+          </ListItemAvatar>
+          <ListItemText
+            primary={`${date} • ${event.locBasic &&
+              event.locBasic.locShortName}`}
+          />
+        </Fragment>
+      </ListItem>
+      {dividerBottom && <Divider />}
+    </>
   )
 }
 
-const TourEventSpacerListItem = () => {
+const TourEventSpacerListItem = ({
+  date,
+  tourId
+}: {
+  date: Moment
+  tourId: string
+}) => {
+  const { dispatch } = useDialogCtx()
+  const handleCreateEvent = () => {
+    dispatch({
+      type: 'CREATE_EVENT',
+      initialValues: { startDate: date, tourId }
+    })
+  }
   return (
-    <ListItem divider dense button onClick={() => console.log('adding')}>
+    <ListItem divider dense button onClick={handleCreateEvent}>
       <ListItemAvatar>
         <Add />
       </ListItemAvatar>
       <ListItemText
         primaryTypographyProps={{ color: 'textSecondary' }}
-        primary={'add new event'}
+        primary={`${date.format('ddd MM/DD')}`}
       />
     </ListItem>
   )
@@ -137,10 +179,12 @@ const TourEventSpacerListItem = () => {
 
 const TourEventSpacerDates = ({
   mustBeBefore,
-  mustBeAfter
+  mustBeAfter,
+  tourId
 }: {
   mustBeAfter: string
   mustBeBefore: string
+  tourId: string
 }) => {
   const [expanded, setExpanded] = useState(false)
   const arrayOfDates = useMemo(() => {
@@ -151,15 +195,10 @@ const TourEventSpacerDates = ({
   }, [mustBeAfter, mustBeBefore])
   if (arrayOfDates.length === 1) {
     return (
-      <ListItem divider dense button>
-        <ListItemAvatar>
-          <Add color="disabled" />
-        </ListItemAvatar>
-        <ListItemText
-          primaryTypographyProps={{ color: 'textSecondary' }}
-          primary={`${arrayOfDates[0].format('ddd MMM DD')} - create event`}
-        />
-      </ListItem>
+      <TourEventSpacerListItem
+        tourId={tourId}
+        date={moment(mustBeAfter).add(1, 'day')}
+      />
     )
   }
   return (
@@ -185,20 +224,18 @@ const TourEventSpacerDates = ({
         />
       </ListItem>
       <Collapse in={expanded}>
-        {arrayOfDates.map(date => {
+        {arrayOfDates.map((date, index) => {
           return (
-            <ListItem divider dense button>
-              <ListItemAvatar>
-                <Add color="disabled" />
-              </ListItemAvatar>
-              <ListItemText
-                primaryTypographyProps={{ color: 'textSecondary' }}
-                primary={`${date.format('ddd MMM DD')} - create event`}
-              />
-            </ListItem>
+            <TourEventSpacerListItem
+              key={date.toISOString()}
+              tourId={tourId}
+              date={date}
+            />
           )
         })}
       </Collapse>
     </>
   )
 }
+
+export default TourEvents

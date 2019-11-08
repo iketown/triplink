@@ -5,7 +5,7 @@ export type EventValues = {
   startDate: string
 }
 const initialState = {
-  open: true,
+  open: false,
   formType: 'event',
   initialValues: {
     startDate: '2019-12-01T05:59:59.999Z'
@@ -18,6 +18,14 @@ const DialogCtx = createContext()
 // @ts-ignore
 const dialogReducer = (state = initialState, action) => {
   switch (action.type) {
+    case 'CLOSE_DIALOG': {
+      return { ...state, open: false }
+    }
+    case 'EDIT_EVENT':
+    case 'CREATE_EVENT': {
+      const { initialValues } = action
+      return { ...state, open: true, initialValues }
+    }
     default:
       return state
   }

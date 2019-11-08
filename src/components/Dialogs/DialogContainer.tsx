@@ -4,9 +4,17 @@ import EventDialog from '../Events/EventDialog'
 import { useDialogCtx } from './DialogCtx'
 
 export const DialogContainer = () => {
-  const { state } = useDialogCtx()
+  const { state, dispatch } = useDialogCtx()
+  const handleClose = () => {
+    dispatch({ type: 'CLOSE_DIALOG' })
+  }
   const contents = {
-    event: <EventDialog initialValues={state.initialValues} />,
+    event: (
+      <EventDialog
+        initialValues={state.initialValues}
+        handleClose={handleClose}
+      />
+    ),
     travel: () => <div />,
     person: () => <div />
   }
@@ -18,7 +26,7 @@ export const DialogContainer = () => {
   if (!state) return null
   const { formType } = state
   return (
-    <Dialog open={true}>
+    <Dialog maxWidth="md" fullWidth open={state.open} onClose={handleClose}>
       <DialogTitle>{titles[formType]}</DialogTitle>
       <DialogContent>{contents[formType]}</DialogContent>
     </Dialog>
