@@ -4,8 +4,8 @@ import { FirebaseDatabase } from '@firebase/database-types'
 import 'firebase/auth'
 import { firebaseConfigDEV, firebaseConfig } from './config'
 import moment, { Moment } from 'moment'
-import { LocationType } from '../Events/EventDialog'
-import { TourEvent } from '../Events/useEvents'
+import { LocationType } from '../Locations/location.types'
+import { TourEvent } from '../Events/event.types'
 
 const config =
   process.env.NODE_ENV === 'production' ? firebaseConfig : firebaseConfigDEV
@@ -54,7 +54,7 @@ class Firebase {
     return profileRef.update(updateObj)
   }
   // LOCATIONS //
-  doCreateLocation = async (loc: any) => {
+  doCreateLocation = async (loc: LocationType) => {
     console.log('creating LOC', loc)
     const myProfile = await this.getUserProfile()
     if (!myProfile) {
@@ -84,11 +84,9 @@ class Firebase {
         .add(loc)
         .then(doc => doc.get())
         .then((doc): LocationType | undefined => {
-          if (!!doc.data()) {
+          if (doc.exists) {
             //@ts-ignore
-            const { lat, lng, address, placeId, ...rest } = doc.data()
-            const id = doc.id
-            return { lat, lng, address, placeId, id, ...rest }
+            return { ...doc.data(), id: doc.id }
           }
         })
     }
@@ -101,9 +99,10 @@ class Firebase {
     const eventRef = this.firestore.collection(
       `accounts/${myProfile.currentAccount}/events`
     )
+    const startDate = moment(event.startDate).format('YYYY-MM-DD')
     return eventRef.add({
       ...event,
-      startDate: moment(event.startDate).toISOString()
+      startDate
     })
   }
   doEditEvent = async (event: TourEvent) => {
@@ -112,12 +111,21 @@ class Firebase {
     const eventRef = this.firestore
       .collection(`accounts/${myProfile.currentAccount}/events`)
       .doc(event.id)
+    const startDate = moment(event.startDate).format('YYYY-MM-DD')
+
     return eventRef.update({
       ...event,
-      startDate: moment(event.startDate).toISOString()
+      startDate
     })
   }
-
+  doChangeEventSubTour = async (eventId: string, subTourIndex: number) => {
+    const myProfile = await this.getUserProfile()
+    if (!myProfile) return null
+    const eventRef = this.firestore
+      .collection(`accounts/${myProfile.currentAccount}/events`)
+      .doc(eventId)
+    return eventRef.update({ subTourIndex })
+  }
   // TOURS //
   doCreateTour = async (name: string, startDate: Moment, endDate: Moment) => {
     if (!this.auth.currentUser) {
@@ -156,6 +164,48 @@ class Firebase {
       endDate: endDate.toISOString()
     }
     return tourRef.update(updateObj)
+  }
+
+  doAdjustSubTours = async (
+    tourId: string,
+    index: number,
+    startDate: string
+  ) => {
+    const myProfile = await this.getUserProfile()
+    if (!myProfile) return null
+    const tourRef = this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/tours/${tourId}`
+    )
+    const tour = await tourRef.get().then(doc => doc.data())
+    const subTours = (tour && tour.subTours) || { startTimes: [] }
+    subTours.startTimes[index] = startDate
+    const prevDate =
+      !!subTours.startTimes[index - 1] && subTours.startTimes[index - 1]
+    const nextDate =
+      !!subTours.startTimes[index + 1] && subTours.startTimes[index + 1]
+    subTours.startTimes.sort()
+    // if (index === 0) throw new Error('dont set zero.  start with one')
+    // if (prevDate > startDate)
+    //   throw new Error(
+    //     `out of order. ${startDate} should be later than ${prevDate}`
+    //   )
+    // if (nextDate < startDate)
+    //   throw new Error(
+    //     `out of order. ${nextDate} should be later than ${startDate}`
+    //   )
+    return tourRef.update({ subTours })
+  }
+  doUpdateSubTourEvents = async (
+    events: string[],
+    subTourId: string,
+    tourId: string
+  ) => {
+    const myProfile = await this.getUserProfile()
+    if (!myProfile) return null
+    const subTourRef = this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/tours/${tourId}/subTours/${subTourId}`
+    )
+    subTourRef.update({ events })
   }
 }
 

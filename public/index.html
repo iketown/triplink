@@ -19,6 +19,10 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
     />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
@@ -30,6 +34,7 @@
     -->
     <title>React App</title>
   </head>
+
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
@@ -48,27 +53,27 @@
 
     <!-- TODO: Add SDKs for Firebase products that you want to use
      https://firebase.google.com/docs/web/setup#available-libraries -->
-    <script src="https://www.gstatic.com/firebasejs/7.2.3/firebase-analytics.js"></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/7.2.3/firebase-analytics.js"></script> -->
 
     <script>
       // Your web app's Firebase configuration
       var firebaseConfig = {
-        apiKey: 'AIzaSyB856-iEeIOOSdIYNRMkPqRyjpusOIM13c',
-        authDomain: 'tripsync19.firebaseapp.com',
-        databaseURL: 'https://tripsync19.firebaseio.com',
-        projectId: 'tripsync19',
-        storageBucket: 'tripsync19.appspot.com',
-        messagingSenderId: '656831018683',
-        appId: '1:656831018683:web:9166bff6f92caccca45b9e',
-        measurementId: 'G-3XVXHM0WP5'
-      }
+        apiKey: "AIzaSyB856-iEeIOOSdIYNRMkPqRyjpusOIM13c",
+        authDomain: "tripsync19.firebaseapp.com",
+        databaseURL: "https://tripsync19.firebaseio.com",
+        projectId: "tripsync19",
+        storageBucket: "tripsync19.appspot.com",
+        messagingSenderId: "656831018683",
+        appId: "1:656831018683:web:9166bff6f92caccca45b9e",
+        measurementId: "G-3XVXHM0WP5"
+      };
       // Initialize Firebase
-      firebase.initializeApp(firebaseConfig)
-      firebase.analytics()
+      firebase.initializeApp(firebaseConfig);
+      firebase.analytics();
     </script>
-    <script
+    <!-- <script
       type="text/javascript"
       src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_PLACES_API_KEY%&libraries=places"
-    ></script>
+    ></script> -->
   </body>
 </html>

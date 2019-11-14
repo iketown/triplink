@@ -15,9 +15,11 @@ import { ArrowDropDown } from '@material-ui/icons'
 import moment from 'moment'
 import TourForm from './TourForm'
 import TourEvents from '../Events/TourEvents'
-import { Tour } from './Tours'
+import { Tour } from './types'
 import styled from 'styled-components'
-
+import { TourTravels } from '../Travels/TourTravels'
+import RotatingArrowButton from '../Cards/RotatingArrowButton'
+import TourTable from './TourTable'
 interface TabPanelProps {
   children?: React.ReactNode
   index: any
@@ -42,7 +44,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const TourCard = ({ tour }: { tour: Tour }) => {
-  const [tabIndex, setTabIndex] = useState(1)
+  const [tabIndex, setTabIndex] = useState(0)
   const [expanded, setExpanded] = useState(true)
   const handleSetTab = (e: React.ChangeEvent<{}>, index: number) => {
     setTabIndex(index)
@@ -53,9 +55,10 @@ export const TourCard = ({ tour }: { tour: Tour }) => {
     endDate: moment(tour.endDate)
   }
   const tourItems = [
+    <TourTable tour={tour} />,
     <TourForm initialValues={initialValues} />,
     <TourEvents tour={tour} />,
-    () => <div>Travels</div>,
+    <TourTravels tour={tour} />,
     () => <div>People</div>
   ]
   return (
@@ -73,18 +76,15 @@ export const TourCard = ({ tour }: { tour: Tour }) => {
           color: 'textSecondary'
         }}
         action={
-          <IconButton onClick={() => setExpanded(old => !old)}>
-            <ArrowDropDown
-              style={{
-                transform: `rotate(${expanded ? 0 : 180}deg)`,
-                transition: 'transform .5s'
-              }}
-            />
-          </IconButton>
+          <RotatingArrowButton
+            onClick={() => setExpanded(old => !old)}
+            expanded={expanded}
+          />
         }
       />
       <Collapse in={expanded}>
         <Tabs style={{ flexGrow: 1 }} value={tabIndex} onChange={handleSetTab}>
+          <Tab label={'Table'}></Tab>
           <Tab label={'General'}></Tab>
           <Tab label={'Events'}></Tab>
           <Tab label={'Travels'}></Tab>

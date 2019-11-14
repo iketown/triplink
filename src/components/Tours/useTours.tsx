@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useFirebaseCtx } from '../Firebase'
 import useAuth from '../Account/UserCtx'
-import { Tour } from './Tours'
+import { Tour } from './types'
 
 export const useTours = () => {
   const [tours, setTours] = useState<Tour[]>([])
@@ -19,7 +19,12 @@ export const useTours = () => {
           // @ts-ignore
           _myTours.push({ ...doc.data(), id: doc.id })
         })
-        setTours(_myTours)
+        setTours(
+          _myTours.sort((a, b) => {
+            if (a.startDate < b.startDate) return -1
+            return 1
+          })
+        )
       })
       return unsubscribe
     }

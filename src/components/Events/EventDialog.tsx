@@ -1,90 +1,93 @@
-import React from 'react'
-import ShowMe from '../../utils/ShowMe'
-import { EventValues } from '../Dialogs/DialogCtx'
-import { Form, Field } from 'react-final-form'
-import { Grid, Button } from '@material-ui/core'
-import GoogPlacesAC from '../Forms/googleAC/GoogPlacesAutocomplete'
-import DateInput from '../Forms/inputs/DateInput'
-import MapOneLoc from '../Maps/MapOneLoc'
-import { getShortNameFromLoc } from '../../utils/locationFxns'
-import TextInput from '../Forms/inputs/TextInput'
-import { useFirebaseCtx } from '../Firebase'
+import React from "react";
+import ShowMe from "../../utils/ShowMe";
+import { EventValues } from "../Dialogs/DialogCtx";
+import { Form, Field } from "react-final-form";
+import { Grid, Button } from "@material-ui/core";
+import GoogPlacesAC from "../Forms/googleAC/GoogPlacesACMUI";
+import DateInput from "../Forms/inputs/DateInput";
+import SelectInput from "../Forms/inputs/SelectInput";
+import GoogMap from "../Maps/GoogMap";
+import {
+  getShortNameFromLoc,
+  getTimeZoneFromLatLng
+} from "../../utils/locationFxns";
+import TextInput from "../Forms/inputs/TextInput";
+import { useFirebaseCtx } from "../Firebase";
+import moment from "moment-timezone";
+import TimeInput from "../Forms/inputs/TimeInput";
+import { LocBasicType, LocationType } from "../Locations/location.types";
+import { DateTimeInput } from "../Forms/inputs/DateTimeInput";
+import { useAmadeus } from "../../apis/Amadeus";
 
-export type LocationType = {
-  placeId: string
-  lat: number
-  lng: number
-  address: string
-  venueName?: string
-  city?: string
-  town?: string
-  state?: string
-  stateShort?: string
-  country?: string
-  countryShort?: string
-  id?: string
-}
-
-export type LocBasicType = {
-  placeId: string
-  venueName?: string
-  locShortName?: string
-  lat: number
-  lng: number
-  address: string
-  id: string
-}
-
-// export interface EventInterface {
-//   startDate: string
-//   locBasic: LocBasicType | {}
-//   tourId: string
-//   startTime?: string
-// }
-
+//
+//
 export const EventDialog = ({
   initialValues,
   handleClose
 }: {
-  initialValues: EventValues
-  handleClose: () => void
+  initialValues: EventValues;
+  handleClose: () => void;
 }) => {
-  const { doCreateLocation, doCreateEvent, doEditEvent } = useFirebaseCtx()
-
+  const { doCreateLocation, doCreateEvent, doEditEvent } = useFirebaseCtx();
+  const { getAirportsNearPoint } = useAmadeus();
   const handleSubmit = async (values: any) => {
-    console.log('values', values)
     // save location
+
+    const airports = await getAirportsNearPoint(
+      values.location.lat,
+      values.location.lng
+    );
+    console.log("airports", airports);
     const locResponse = await doCreateLocation({
       ...values.location,
       venueName: values.venueName,
       locShortName: values.locShortName
-    }).catch(err => console.log('error submitting LOCATION', err))
-    if (!locResponse) return { error: 'some kind of error' }
-    const { id, lat, lng, venueName, address } = locResponse
+    }).catch(err => console.log("error submitting LOCATION", err));
+    if (!locResponse) return { error: "some kind of error" };
+    const { id, lat, lng, venueName, address, timeZoneId } = locResponse;
     const locBasic = {
       id,
       lat,
       lng,
       venueName,
       address,
+      timeZoneId,
       locShortName: values.locShortName,
       placeId: values.location.placeId
-    }
+    };
     // save event with minimal location info and locId
-    const { startDate, tourId } = values
+    const { startDate, startTime, tourId, subTourIndex } = values;
     if (values.id) {
       //@ts-ignore
-      await doEditEvent({ startDate, locBasic, tourId, id: values.id })
+      await doEditEvent({
+        startDate,
+        startTime,
+        locBasic,
+        tourId,
+        subTourIndex,
+        id: values.id
+      });
     } else {
       //@ts-ignore
-      await doCreateEvent({ startDate, locBasic, tourId })
+      await doCreateEvent({
+        startDate,
+        startTime,
+        locBasic,
+        tourId,
+        subTourIndex
+      });
     }
-    handleClose()
-  }
+    handleClose();
+  };
 
   return (
     <Form onSubmit={handleSubmit} initialValues={initialValues}>
       {({ handleSubmit, values, form, submitting }) => {
+        //@ts-ignore
+        if (values.location && values.location.timeZoneId) {
+          //@ts-ignore
+          moment.tz.setDefault(values.location.timeZoneId);
+        }
         return (
           <form onSubmit={handleSubmit}>
             <Grid container spacing={2}>
@@ -92,17 +95,35 @@ export const EventDialog = ({
                 <Grid item xs={12}>
                   <Field name="location">
                     {({ input }) => {
-                      const handleChange = (loc: LocationType) => {
-                        const shortName = getShortNameFromLoc(loc)
-                        form.change('locShortName', shortName)
-                        form.change('venueName', loc.address.split(',')[0])
-                        input.onChange(loc)
-                      }
+                      const handleChange = async (loc: LocationType) => {
+                        const shortName = getShortNameFromLoc(loc);
+                        form.change("locShortName", shortName);
+                        form.change("venueName", loc.address.split(",")[0]);
+                        const timeZoneId = await getTimeZoneFromLatLng({
+                          lat: loc.lat,
+                          lng: loc.lng,
+                          timeStamp: Number(
+                            moment(values.startDate).format("X")
+                          )
+                        });
+                        loc.timeZoneId = timeZoneId;
+                        moment.tz.setDefault(timeZoneId);
+                        const formStartTime = moment
+                          .tz(values.startDate, timeZoneId)
+                          .startOf("day")
+                          .add(20, "hours")
+                          // .tz(timeZoneId)
+                          .format();
+                        //@ts-ignore
+                        window.formStartTime = formStartTime;
+                        form.change("startTime", formStartTime);
+                        input.onChange(loc);
+                      };
                       return (
-                        <div style={{ marginBottom: '10px' }}>
-                          <GoogPlacesAC setLocation={handleChange} />
+                        <div style={{ marginBottom: "10px" }}>
+                          <GoogPlacesAC setLocation={(place: any) => {}} />
                         </div>
-                      )
+                      );
                     }}
                   </Field>
                 </Grid>
@@ -110,23 +131,25 @@ export const EventDialog = ({
                   <TextInput label="Venue Name" name="venueName" />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextInput label="Event Name (short)" name="locShortName" />
+                  <TextInput
+                    label="Venue Location (short)"
+                    name="locShortName"
+                  />
                 </Grid>
-                <Grid item xs={8}>
-                  <DateInput name="startDate" label="Date" />
+                <Grid item xs={12}>
+                  <DateTimeInput
+                    name="startTime"
+                    label="Date / Time"
+                    //@ts-ignore
+                    timeZoneId={values.location && values.location.timeZoneId}
+                  />
                 </Grid>
-                <Grid item xs={4}>
-                  time input
+                <Grid item xs={12} sm={6}>
+                  <SelectInput name="subTourIndex" label="Sub-Tour" />
                 </Grid>
               </Grid>
               <Grid item xs={12} sm={6}>
-                {
-                  // @ts-ignore
-                  <MapOneLoc
-                    // @ts-ignore
-                    location={values.location}
-                  />
-                }
+                {values.location && <GoogMap markerLocs={[values.location]} />}
               </Grid>
               <Grid item xs={12}>
                 <Button disabled={submitting} type="submit">
@@ -137,10 +160,10 @@ export const EventDialog = ({
             <ShowMe obj={values} name="values" noModal />
             <ShowMe obj={initialValues} name="initialValues" noModal />
           </form>
-        )
+        );
       }}
     </Form>
-  )
-}
+  );
+};
 
-export default EventDialog
+export default EventDialog;

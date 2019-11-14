@@ -8,8 +8,7 @@ export const getArrayOfDates = ({
   last: string
 }): Moment[] => {
   const firstDay = moment(first)
-    .add(1, 'day')
-    .endOf('day')
+    .startOf('day')
   const lastDay = moment(last).endOf('day')
 
   const array = []

@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import styled from "styled-components"
+import React, { useState } from 'react'
+import styled from 'styled-components'
 import {
   Button,
   Dialog,
@@ -7,15 +7,15 @@ import {
   DialogContent,
   Chip,
   Avatar
-} from "@material-ui/core"
-import { MdInfo } from "react-icons/md"
+} from '@material-ui/core'
+import { MdInfo } from 'react-icons/md'
 
 interface MiniTextProps {
   zoom?: number
 }
 
 const MiniText = styled.pre<MiniTextProps>`
-  font-size: ${p => p.zoom ? p.zoom * 10 : 10}px;
+  font-size: ${p => (p.zoom ? p.zoom * 10 : 10)}px;
   color: green;
 `
 const YellowBox = styled.div`
@@ -27,7 +27,15 @@ const TopRow = styled.div`
   display: flex;
   justify-content: space-between;
 `
-function ShowMe({ obj, name, noModal }:{obj?:Object, name:string, noModal?:boolean}) {
+function ShowMe({
+  obj,
+  name,
+  noModal
+}: {
+  obj?: Object
+  name: string
+  noModal?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   if (noModal)
@@ -62,6 +70,7 @@ function ShowMe({ obj, name, noModal }:{obj?:Object, name:string, noModal?:boole
         fullWidth
         open={open}
         onClose={() => setOpen(false)}
+        onClick={e => e.stopPropagation()}
       >
         <DialogTitle>{name}</DialogTitle>
         <DialogContent>

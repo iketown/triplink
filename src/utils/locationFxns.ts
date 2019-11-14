@@ -1,4 +1,4 @@
-import { LocationType } from '../components/Events/EventDialog'
+import { LocationType } from '../components/Locations/location.types'
 
 export const getShortNameFromLoc = (loc: LocationType) => {
   let shortName
@@ -10,4 +10,21 @@ export const getShortNameFromLoc = (loc: LocationType) => {
     }`
   }
   return shortName
+}
+
+export const getTimeZoneFromLatLng = async ({
+  lat,
+  lng,
+  timeStamp
+}: {
+  lat: number
+  lng: number
+  timeStamp: number
+}): Promise<string> => {
+  const { REACT_APP_GOOGLE_MAP_API_KEY } = process.env
+  const { timeZoneId } = await fetch(
+    `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timeStamp}&key=${REACT_APP_GOOGLE_MAP_API_KEY}`
+  ).then(res => res.json())
+  console.log('timezone timeZoneId', timeZoneId)
+  return timeZoneId
 }

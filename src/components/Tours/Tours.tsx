@@ -7,13 +7,7 @@ import ShowMe from '../../utils/ShowMe'
 import useAuth from '../Account/UserCtx'
 import moment from 'moment'
 import { useTours } from './useTours'
-export type Tour = {
-  createdBy: string
-  name: string
-  startDate: string
-  endDate: string
-  id: string
-}
+import { Tour } from './types'
 
 const Tours = () => {
   const { tours } = useTours()

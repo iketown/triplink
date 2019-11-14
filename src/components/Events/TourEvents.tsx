@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, Fragment } from 'react'
+import React, { useEffect, useState, useMemo, Fragment } from "react";
 import {
   CardContent,
   List,
@@ -9,95 +9,115 @@ import {
   Collapse,
   Typography,
   Button,
-  Divider
-} from '@material-ui/core'
-import { StarBorder, Add, ArrowDropDown } from '@material-ui/icons'
-import { useFirebaseCtx } from '../Firebase'
-import useAuth from '../Account/UserCtx'
-import { Tour } from '../Tours/Tours'
-import ShowMe from '../../utils/ShowMe'
-import moment, { Moment } from 'moment'
-import { getArrayOfDates } from '../../utils/dateFxns'
-import { useEvents, TourEvent } from './useEvents'
-import { useDialogCtx } from '../Dialogs/DialogCtx'
+  Divider,
+  ListItemSecondaryAction,
+  Grid
+} from "@material-ui/core";
+import GoogMap from "../Maps/GoogMap";
+import { StarBorder, Add, ArrowDropDown } from "@material-ui/icons";
+import { useFirebaseCtx } from "../Firebase";
+import useAuth from "../Account/UserCtx";
+import { Tour } from "../Tours/types";
+import ShowMe from "../../utils/ShowMe";
+import moment, { Moment } from "moment";
+import { getArrayOfDates } from "../../utils/dateFxns";
+import { useEvents } from "./useEvents";
+import { TourEvent } from "./event.types";
+import { useDialogCtx } from "../Dialogs/DialogCtx";
 
 export const TourEvents = ({ tour }: { tour: Tour }) => {
-  const { firestore } = useFirebaseCtx()
-  const { user } = useAuth()
-  const { events, eventsObj } = useEvents(tour.id)
-  const { dispatch } = useDialogCtx()
+  const { firestore } = useFirebaseCtx();
+  const { user } = useAuth();
+  const { events, eventsObj } = useEvents(tour.id);
+  const { dispatch } = useDialogCtx();
   const handleCreateEvent = () => {
     dispatch({
-      type: 'CREATE_EVENT',
-      initialValues: { startDate: tour.startDate, tourId: tour.id }
-    })
-  }
+      type: "CREATE_EVENT",
+      initialValues: {
+        startDate: tour.startDate,
+        tourId: tour.id,
+        subTourIndex: 0
+      }
+    });
+  };
   if (!events.length)
     return (
-      <CardContent style={{ textAlign: 'center' }}>
+      <CardContent style={{ textAlign: "center" }}>
         <Typography gutterBottom>No Events</Typography>
         <Button variant="contained" color="primary" onClick={handleCreateEvent}>
           Create Event
         </Button>
       </CardContent>
-    )
+    );
   return (
     <CardContent>
-      TOUR EVENTS
-      <List dense>
-        {Object.entries(eventsObj).map(([date, eventArr], index) => {
-          const isFirst = index === 0
-          const isLast = index === Object.keys(eventsObj).length - 1
-          const nextDate = Object.values(eventsObj)[index + 1]
-          const nextDateTime = nextDate ? nextDate[0].startDate : null
-          const isGigNextDay =
-            nextDateTime &&
-            moment(eventArr[0].startDate)
-              .endOf('day')
-              .add(1, 'day')
-              .isSameOrAfter(nextDateTime)
-          return (
-            <Fragment key={date}>
-              {isFirst && (
-                <TourEventSpacerListItem
-                  tourId={tour.id}
-                  key={date + 'before'}
-                  date={moment(eventArr[0].startDate).subtract(1, 'day')}
-                />
-              )}
-              {
-                //@ts-ignore
-                <TourEventListItem date={date} eventArr={eventArr} />
-              }
-              {!isLast && !isGigNextDay && nextDateTime && (
-                <TourEventSpacerDates
-                  tourId={tour.id}
-                  key={date + 'inBetween'}
-                  mustBeAfter={eventArr[0].startDate}
-                  mustBeBefore={nextDateTime}
-                />
-              )}
-              {isLast && (
-                <TourEventSpacerListItem
-                  tourId={tour.id}
-                  key={date + 'after'}
-                  date={moment(eventArr[0].startDate).add(1, 'day')}
-                />
-              )}
-            </Fragment>
-          )
-        })}
-      </List>
+      <Grid container>
+        <Grid item xs={12} md={6}>
+          <List dense>
+            {Object.entries(eventsObj).map(([date, eventArr], index) => {
+              const isFirst = index === 0;
+              const isLast = index === Object.keys(eventsObj).length - 1;
+              const nextDate = Object.values(eventsObj)[index + 1];
+              const nextDateTime = nextDate ? nextDate[0].startTime : null;
+              const isGigNextDay =
+                nextDateTime &&
+                moment(eventArr[0].startTime)
+                  .endOf("day")
+                  .add(1, "day")
+                  .isSameOrAfter(nextDateTime);
+              return (
+                <Fragment key={date}>
+                  {isFirst && (
+                    <TourEventSpacerListItem
+                      tourId={tour.id}
+                      key={date + "before"}
+                      date={moment(eventArr[0].startTime).subtract(1, "day")}
+                    />
+                  )}
+                  {
+                    //@ts-ignore
+                    <TourEventListItem
+                      date={date}
+                      eventArr={eventArr}
+                      isFirst={isFirst}
+                    />
+                  }
+                  {!isLast && !isGigNextDay && nextDateTime && (
+                    <TourEventSpacerDates
+                      tourId={tour.id}
+                      key={date + "inBetween"}
+                      mustBeAfter={eventArr[0].startTime}
+                      mustBeBefore={nextDateTime}
+                    />
+                  )}
+                  {isLast && (
+                    <TourEventSpacerListItem
+                      tourId={tour.id}
+                      key={date + "after"}
+                      date={moment(eventArr[0].startTime).add(1, "day")}
+                    />
+                  )}
+                </Fragment>
+              );
+            })}
+          </List>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GoogMap markerLocs={events.map(evt => evt.locBasic)} />
+        </Grid>
+      </Grid>
     </CardContent>
-  )
-}
+  );
+};
 
 function TourEventListItem({
   date,
-  eventArr
+  eventArr,
+  isFirst
 }: {
-  date: string
-  eventArr: TourEvent[]
+  date: string;
+  eventArr: TourEvent[];
+  isFirst?: boolean;
 }) {
   return eventArr.map((event, index) => {
     return (
@@ -107,8 +127,8 @@ function TourEventListItem({
         date={date}
         dividerBottom={index + 1 === eventArr.length}
       />
-    )
-  })
+    );
+  });
 }
 
 const TourEventSingleListItem = ({
@@ -116,22 +136,22 @@ const TourEventSingleListItem = ({
   date,
   dividerBottom = true
 }: {
-  event: TourEvent
-  date: string
-  dividerBottom?: boolean
+  event: TourEvent;
+  date: string;
+  dividerBottom?: boolean;
 }) => {
-  const { dispatch } = useDialogCtx()
+  const { dispatch } = useDialogCtx();
   const handleEditEvent = () => {
-    const { locBasic, ...eventInfo } = event
-    const { venueName, locShortName } = locBasic
+    const { locBasic, ...eventInfo } = event;
+    const { venueName, locShortName } = locBasic;
     const initialValues = {
       ...eventInfo,
       location: locBasic,
       venueName,
       locShortName
-    }
-    dispatch({ type: 'EDIT_EVENT', initialValues })
-  }
+    };
+    dispatch({ type: "EDIT_EVENT", initialValues });
+  };
   return (
     <>
       <ListItem button onClick={handleEditEvent}>
@@ -139,67 +159,78 @@ const TourEventSingleListItem = ({
           <ListItemAvatar>
             <StarBorder />
           </ListItemAvatar>
+          <ShowMe obj={event} name={""} />
           <ListItemText
             primary={`${date} • ${event.locBasic &&
               event.locBasic.locShortName}`}
           />
+          <ListItemSecondaryAction></ListItemSecondaryAction>
         </Fragment>
       </ListItem>
       {dividerBottom && <Divider />}
     </>
-  )
-}
+  );
+};
 
 const TourEventSpacerListItem = ({
   date,
   tourId
 }: {
-  date: Moment
-  tourId: string
+  date: Moment;
+  tourId: string;
 }) => {
-  const { dispatch } = useDialogCtx()
+  const { dispatch } = useDialogCtx();
   const handleCreateEvent = () => {
     dispatch({
-      type: 'CREATE_EVENT',
-      initialValues: { startDate: date, tourId }
-    })
-  }
+      type: "CREATE_EVENT",
+      initialValues: {
+        startDate: date,
+        startTime: moment(date)
+          .startOf("day")
+          .add(20, "hours"),
+        tourId,
+        //TODO - set subTourIndex according to date
+        //  whatever the prev event's subTourINdex is ?
+        subTourIndex: 0
+      }
+    });
+  };
   return (
     <ListItem divider dense button onClick={handleCreateEvent}>
       <ListItemAvatar>
         <Add />
       </ListItemAvatar>
       <ListItemText
-        primaryTypographyProps={{ color: 'textSecondary' }}
-        primary={`${date.format('ddd MM/DD')}`}
+        primaryTypographyProps={{ color: "textSecondary" }}
+        primary={`${date.format("ddd MM/DD")}`}
       />
     </ListItem>
-  )
-}
+  );
+};
 
 const TourEventSpacerDates = ({
   mustBeBefore,
   mustBeAfter,
   tourId
 }: {
-  mustBeAfter: string
-  mustBeBefore: string
-  tourId: string
+  mustBeAfter: string;
+  mustBeBefore: string;
+  tourId: string;
 }) => {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false);
   const arrayOfDates = useMemo(() => {
     return getArrayOfDates({
       first: mustBeAfter,
       last: mustBeBefore
-    })
-  }, [mustBeAfter, mustBeBefore])
+    });
+  }, [mustBeAfter, mustBeBefore]);
   if (arrayOfDates.length === 1) {
     return (
       <TourEventSpacerListItem
         tourId={tourId}
-        date={moment(mustBeAfter).add(1, 'day')}
+        date={moment(mustBeAfter).add(1, "day")}
       />
-    )
+    );
   }
   return (
     <>
@@ -214,13 +245,13 @@ const TourEventSpacerDates = ({
           <ArrowDropDown
             style={{
               transform: `rotate(${expanded ? 0 : -180}deg)`,
-              transition: 'transform .5s'
+              transition: "transform .5s"
             }}
           />
         </ListItemAvatar>
         <ListItemText
-          primaryTypographyProps={{ color: 'textSecondary' }}
-          primary={'add new'}
+          primaryTypographyProps={{ color: "textSecondary" }}
+          primary={"add new"}
         />
       </ListItem>
       <Collapse in={expanded}>
@@ -231,11 +262,11 @@ const TourEventSpacerDates = ({
               tourId={tourId}
               date={date}
             />
-          )
+          );
         })}
       </Collapse>
     </>
-  )
-}
+  );
+};
 
-export default TourEvents
+export default TourEvents;

@@ -2,18 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react'
 import useAuth from '../Account/UserCtx'
 import { useFirebaseCtx } from '../Firebase'
 import moment from 'moment'
-import { LocBasicType } from './EventDialog'
+import { TourEvent } from './event.types'
 //
 //
 
-export type TourEvent = {
-  id?: string
-  startDate: string
-  startTime?: string
-  endDate?: string
-  tourId: string
-  locBasic: LocBasicType
-}
 
 export const useEvents = (tourId: string) => {
   const [events, setEvents] = useState<TourEvent[]>([])
@@ -25,13 +17,14 @@ export const useEvents = (tourId: string) => {
       const eventsRef = firestore
         .collection(`/accounts/${userProfile.currentAccount}/events`)
         .where('tourId', '==', tourId)
+
       const unsubscribe = eventsRef.onSnapshot(snapshot => {
         console.log('updating EVENTS')
         const _events: any = []
         snapshot.forEach(doc => {
           _events.push({ ...doc.data(), id: doc.id })
         })
-        setEvents(_events)
+        setEvents(_events.sort((a: any, b: any) => a.startTime < b.startTime ? -1 : 1))
       })
       return unsubscribe
     }
@@ -40,17 +33,13 @@ export const useEvents = (tourId: string) => {
   const eventsObj = useMemo(() => {
     console.log('memoizing eventsObj')
     const _eventsObj = events
-      .sort((a: TourEvent, b: TourEvent) => {
-        if (a.startDate < b.startDate) return -1
-        return 1
-      })
       .reduce(
         (
           obj: { [key: string]: TourEvent[] },
           event: TourEvent,
           index: number
         ) => {
-          const date = moment(event.startDate).format('MM/DD')
+          const date = moment(event.startTime).format('YYYY-MM-DD')
           if (!!obj[date]) obj[date].push(event)
           else obj[date] = [event]
           return obj
