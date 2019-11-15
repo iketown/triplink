@@ -44,24 +44,24 @@ interface PlaceType {
   };
 }
 
-export default function GoogleMaps({ setLocation }: { setLocation?: any }) {
+export default function GooglePlacesAC({ setLocation }: { setLocation?: any }) {
   const classes = useStyles();
   const [inputValue, setInputValue] = React.useState("");
   const [options, setOptions] = React.useState<PlaceType[]>([]);
 
-  const loaded = React.useRef(false);
+  // const loaded = React.useRef(false);
 
-  if (typeof window !== "undefined" && !loaded.current && !window.google) {
-    if (!document.querySelector("#google-maps")) {
-      const { REACT_APP_GOOGLE_PLACES_API_KEY } = process.env;
-      loadScript(
-        `https://maps.googleapis.com/maps/api/js?key=${REACT_APP_GOOGLE_PLACES_API_KEY}&libraries=places`,
-        document.querySelector("head"),
-        "google-maps"
-      );
-    }
-    loaded.current = true;
-  }
+  // if (typeof window !== "undefined" && !loaded.current && !window.google) {
+  //   if (!document.querySelector("#google-maps")) {
+  //     const { REACT_APP_GOOGLE_PLACES_API_KEY } = process.env;
+  //     loadScript(
+  //       `https://maps.googleapis.com/maps/api/js?key=${REACT_APP_GOOGLE_PLACES_API_KEY}&libraries=places`,
+  //       document.querySelector("head"),
+  //       "google-maps"
+  //     );
+  //   }
+  //   loaded.current = true;
+  // }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);

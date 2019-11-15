@@ -3,7 +3,6 @@ import { ITravelDialog, TravelTypes } from "./travel.types";
 import { useDialogCtx } from "../Dialogs/DialogCtx";
 import { Grid, Button } from "@material-ui/core";
 import ShowMe from "../../utils/ShowMe";
-import LocationSearchInput from "../Forms/googleAC/GoogPlacesAutocomplete";
 import { useAmadeus } from "../../apis/Amadeus";
 import DestinationAirportsPicker from "./DestinationAirportsPicker";
 import { Form, Field } from "react-final-form";
@@ -24,7 +23,6 @@ const TravelDialog = ({ initialValues, handleClose }: ITravelDialog) => {
         return (
           <>
             <FlightForm />
-            <ShowMe obj={state} name="state" noModal />
           </>
         );
     }

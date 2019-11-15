@@ -3,8 +3,7 @@ import ShowMe from "../../utils/ShowMe";
 import { EventValues } from "../Dialogs/DialogCtx";
 import { Form, Field } from "react-final-form";
 import { Grid, Button } from "@material-ui/core";
-import GoogPlacesAC from "../Forms/googleAC/GoogPlacesACMUI";
-import DateInput from "../Forms/inputs/DateInput";
+import GoogPlacesAC from "../Forms/googleAC/GooglePlacesAC";
 import SelectInput from "../Forms/inputs/SelectInput";
 import GoogMap from "../Maps/GoogMap";
 import {
@@ -18,7 +17,7 @@ import TimeInput from "../Forms/inputs/TimeInput";
 import { LocBasicType, LocationType } from "../Locations/location.types";
 import { DateTimeInput } from "../Forms/inputs/DateTimeInput";
 import { useAmadeus } from "../../apis/Amadeus";
-
+import { AirportResult } from "../../apis/amadeus.types";
 //
 //
 export const EventDialog = ({
@@ -32,19 +31,26 @@ export const EventDialog = ({
   const { getAirportsNearPoint } = useAmadeus();
   const handleSubmit = async (values: any) => {
     // save location
-
-    const airports = await getAirportsNearPoint(
+    let airportsAll = await getAirportsNearPoint(
       values.location.lat,
       values.location.lng
     );
-    console.log("airports", airports);
+    if (!airportsAll) airportsAll = [];
     const locResponse = await doCreateLocation({
       ...values.location,
-      venueName: values.venueName,
-      locShortName: values.locShortName
+      airports: (airportsAll && airportsAll.slice(0, 3)) || []
     }).catch(err => console.log("error submitting LOCATION", err));
     if (!locResponse) return { error: "some kind of error" };
-    const { id, lat, lng, venueName, address, timeZoneId } = locResponse;
+    const {
+      id,
+      lat,
+      lng,
+      venueName,
+      address,
+      timeZoneId,
+      shortName,
+      placeId
+    } = locResponse;
     const locBasic = {
       id,
       lat,
@@ -52,8 +58,9 @@ export const EventDialog = ({
       venueName,
       address,
       timeZoneId,
-      locShortName: values.locShortName,
-      placeId: values.location.placeId
+      shortName,
+      placeId,
+      airport: airportsAll[0]
     };
     // save event with minimal location info and locId
     const { startDate, startTime, tourId, subTourIndex } = values;
@@ -96,9 +103,7 @@ export const EventDialog = ({
                   <Field name="location">
                     {({ input }) => {
                       const handleChange = async (loc: LocationType) => {
-                        const shortName = getShortNameFromLoc(loc);
-                        form.change("locShortName", shortName);
-                        form.change("venueName", loc.address.split(",")[0]);
+                        loc.shortName = getShortNameFromLoc(loc);
                         const timeZoneId = await getTimeZoneFromLatLng({
                           lat: loc.lat,
                           lng: loc.lng,
@@ -121,19 +126,19 @@ export const EventDialog = ({
                       };
                       return (
                         <div style={{ marginBottom: "10px" }}>
-                          <GoogPlacesAC setLocation={(place: any) => {}} />
+                          <GoogPlacesAC setLocation={handleChange} />
                         </div>
                       );
                     }}
                   </Field>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextInput label="Venue Name" name="venueName" />
+                  <TextInput label="Venue Name" name="location.venueName" />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextInput
                     label="Venue Location (short)"
-                    name="locShortName"
+                    name="location.shortName"
                   />
                 </Grid>
                 <Grid item xs={12}>

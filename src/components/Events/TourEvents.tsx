@@ -143,12 +143,12 @@ const TourEventSingleListItem = ({
   const { dispatch } = useDialogCtx();
   const handleEditEvent = () => {
     const { locBasic, ...eventInfo } = event;
-    const { venueName, locShortName } = locBasic;
+    const { venueName, shortName } = locBasic;
     const initialValues = {
       ...eventInfo,
       location: locBasic,
       venueName,
-      locShortName
+      shortName
     };
     dispatch({ type: "EDIT_EVENT", initialValues });
   };
@@ -161,8 +161,7 @@ const TourEventSingleListItem = ({
           </ListItemAvatar>
           <ShowMe obj={event} name={""} />
           <ListItemText
-            primary={`${date} • ${event.locBasic &&
-              event.locBasic.locShortName}`}
+            primary={`${date} • ${event.locBasic && event.locBasic.shortName}`}
           />
           <ListItemSecondaryAction></ListItemSecondaryAction>
         </Fragment>

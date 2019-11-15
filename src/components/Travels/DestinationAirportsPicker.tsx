@@ -1,42 +1,44 @@
 import React, { useEffect, useState } from "react";
 import {
   Grid,
-  Typography,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   FormHelperText
 } from "@material-ui/core";
-import { LocPoint, LocBasicType } from "../Locations/location.types";
-import { useEvents } from "../Events/useEvents";
-import { fakeFromAirports, fakeToAirports } from "./fakeInfo";
-import { useAmadeus } from "../../apis/Amadeus";
+import { Field } from "react-final-form";
+import { LocBasicType } from "../Locations/location.types";
 import { AirportResult } from "../../apis/amadeus.types";
-import ShowMe from "../../utils/ShowMe";
-import LocationsSelect from "./LocationsSelect";
 import AirportAC from "./AirportACDownshift";
 //
 //
 export const DestinationAirportsPicker = ({
   locations,
-  arriving
+  arriving,
+  closeAirports
 }: {
   locations: LocBasicType[];
   arriving?: boolean;
+  closeAirports?: (AirportResult | undefined)[];
 }) => {
-  const [selectedPlaceId, setSelectedPlaceId] = useState("");
-
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <AirportAC
-          onSelect={ap => console.log("ap", ap)}
-          initialSearchString="las vegas"
-        />
-      </Grid>
-      <ShowMe obj={selectedPlaceId} name="selectedPlaceId" noModal />
-    </Grid>
+    <Field name={arriving ? "toAirport" : "fromAirport"}>
+      {({ input, meta }) => {
+        return (
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <AirportAC
+                onSelect={ap => input.onChange(ap)}
+                closeAirports={closeAirports || []}
+                arriving={arriving}
+                meta={meta}
+              />
+            </Grid>
+          </Grid>
+        );
+      }}
+    </Field>
   );
 };
 

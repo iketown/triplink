@@ -3,10 +3,8 @@ import { Dialog, DialogContent, DialogTitle } from "@material-ui/core";
 import EventDialog from "../Events/EventDialog";
 import TravelDialog from "../Travels/TravelDialog";
 import { useDialogCtx } from "./DialogCtx";
-import AirportACDownshift from "../Travels/AirportACDownshift";
-import GooglePlacesDownshift from "../Forms/googleAC/GoogPlacesACdownshift";
 
-import GoogleAC from "../Forms/googleAC/GoogPlacesACMUI";
+import GooglePlaceAC from "../Forms/googleAC/GooglePlacesAC";
 export const DialogContainer = () => {
   const { state, dispatch } = useDialogCtx();
   const handleClose = () => {
@@ -21,13 +19,7 @@ export const DialogContainer = () => {
       <TravelDialog initialValues={initialValues} handleClose={handleClose} />
     ),
     person: () => <div />,
-    downshift: (
-      <AirportACDownshift
-        onSelect={choice => console.log("choice", choice)}
-        initialSearchString="fake"
-      />
-    ),
-    googPlaces: <GoogleAC setLocation={console.log} />
+    googPlaces: <GooglePlaceAC setLocation={console.log} />
   };
   const titles = {
     event: "EVENT",

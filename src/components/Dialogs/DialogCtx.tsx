@@ -11,7 +11,7 @@ export type EventValues = {
     id: string;
     lat: number;
     lng: number;
-    locShortName: string;
+    shortName: string;
     placeId: string;
     timeZoneId: string;
     venueName: string;
@@ -21,14 +21,14 @@ export type EventValues = {
     id: string;
     lat: number;
     lng: number;
-    locShortName: string;
+    shortName: string;
     placeId: string;
     timeZoneId: string;
     venueName: string;
   };
 };
 const initialState = {
-  open: true,
+  open: false,
   formType: "googPlaces",
   initialValues: {
     date: "2019-11-10",

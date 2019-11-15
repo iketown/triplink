@@ -1,20 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { debounce } from "lodash";
-import { render } from "react-dom";
-import Downshift from "downshift";
+import Downshift, { GetItemPropsOptions } from "downshift";
 import {
   TextField,
-  FormControl,
-  FormControlLabel,
   Grid,
-  Chip,
-  Typography,
-  Button,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
-  IconButton
+  IconButton,
+  ListSubheader
 } from "@material-ui/core";
 import styled from "styled-components";
 import { ArrowDropDown } from "@material-ui/icons";
@@ -24,14 +19,31 @@ import { useAmadeus } from "../../apis/Amadeus";
 
 const AirportACDownshift = ({
   onSelect,
-  initialSearchString
+  closeAirports,
+  arriving,
+  meta
 }: {
   onSelect: (ap: AirportResult) => void;
-  initialSearchString?: string;
+  closeAirports?: (AirportResult | undefined)[];
+  arriving?: boolean;
+  meta?: any;
 }) => {
-  const [airports, setAirports] = useState<AirportResult[]>([]);
-  const [searchString, setSearchString] = useState(initialSearchString);
+  const [airports, setAirports] = useState<(AirportResult | undefined)[]>([]);
+
+  const [searchString, setSearchString] = useState("");
+
   const { getAirportsByKeyword } = useAmadeus();
+
+  const initialAirports = useMemo(() => {
+    const _initialAirports =
+      closeAirports &&
+      closeAirports.filter(
+        (ap, index, arr) =>
+          !!ap &&
+          arr.findIndex(_ap => _ap && _ap.iataCode === ap.iataCode) === index
+      );
+    return _initialAirports || [];
+  }, [closeAirports]);
 
   const dbApCall = useRef(
     debounce(
@@ -48,22 +60,20 @@ const AirportACDownshift = ({
   );
   useEffect(() => {
     let active = true;
-    if (searchString === initialSearchString) {
-      // auto select the first choice
-    }
-    if (searchString && searchString.length > 1) {
+    if (searchString && searchString.length > 2 && searchString.length < 10) {
       dbApCall.current(searchString, active);
     }
     return () => {
       active = false;
     };
-  }, [searchString]);
-
+  }, [searchString, initialAirports]);
   return (
     <>
       <Downshift
         onInputValueChange={setSearchString}
-        itemToString={(item: AirportResult) => (item ? item.detailedName : "")}
+        itemToString={(item: AirportResult) =>
+          item ? `${item.iataCode} - ${item.detailedName}` : ""
+        }
         onSelect={onSelect}
         initialIsOpen={true}
       >
@@ -84,7 +94,9 @@ const AirportACDownshift = ({
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={"search for airport"}
+                  error={meta && meta.dirty && !!meta.error}
+                  helperText={meta && meta.dirty && meta.error}
+                  label={arriving ? "search TO airport" : "search FROM airport"}
                   {...getInputProps()}
                   InputProps={{
                     endAdornment: (
@@ -95,44 +107,90 @@ const AirportACDownshift = ({
                   }}
                 />
               </Grid>
-              {isOpen && airports.length && (
-                <List dense>
+              {isOpen && (
+                <List
+                  dense
+                  style={{
+                    maxHeight: "15rem",
+                    overflow: "scroll"
+                  }}
+                >
                   {airports.map((ap, index) => {
+                    if (!ap) return null;
                     return (
-                      // <Grid key={ap.iataCode} item xs={6}>
-                      <ListItem
-                        dense
+                      <AirportListItem
                         key={ap.iataCode}
-                        {...getItemProps({
-                          key: ap.iataCode,
-                          index,
-                          item: ap,
-                          style: {
-                            backgroundColor:
-                              highlightedIndex === index ? "gainsboro" : "white"
-                          }
-                        })}
-                      >
-                        <ListItemAvatar>
-                          <b>{ap.iataCode}</b>
-                        </ListItemAvatar>
-                        <ListItemText
-                          style={{ margin: 0 }}
-                          primary={ap.name}
-                          secondary={ap.detailedName}
-                        />
-                      </ListItem>
-                      // </Grid>
+                        {...{ ap, index, highlightedIndex, getItemProps }}
+                      />
                     );
                   })}
+                  <ListSubheader>airports near tour events</ListSubheader>
+                  {initialAirports
+                    .filter(
+                      ap =>
+                        !airports.find(
+                          _ap => ap && _ap && ap.iataCode === _ap.iataCode
+                        )
+                    )
+                    .map((ap, index) => {
+                      if (!ap) return null;
+                      const indexOffset = airports.length;
+                      return (
+                        <AirportListItem
+                          key={ap.iataCode}
+                          {...{
+                            ap,
+                            index: index + indexOffset,
+                            highlightedIndex,
+                            getItemProps
+                          }}
+                        />
+                      );
+                    })}
                 </List>
               )}
             </Grid>
           );
         }}
       </Downshift>
-      <ShowMe obj={searchString} name="searchString" />
     </>
+  );
+};
+
+interface IAirportListItem {
+  ap: AirportResult;
+  index: number;
+  highlightedIndex: number | null;
+  getItemProps: (options: GetItemPropsOptions<any>) => any;
+}
+const AirportListItem = ({
+  ap,
+  index,
+  getItemProps,
+  highlightedIndex
+}: IAirportListItem) => {
+  return (
+    <ListItem
+      dense
+      key={ap.iataCode}
+      {...getItemProps({
+        key: ap.iataCode,
+        index,
+        item: ap,
+        style: {
+          backgroundColor: highlightedIndex === index ? "#ccc" : "#eee"
+        }
+      })}
+    >
+      <ListItemAvatar>
+        <b>{ap.iataCode}</b>
+      </ListItemAvatar>
+      <ListItemText
+        style={{ margin: 0 }}
+        primary={ap.name}
+        secondary={ap.detailedName}
+      />
+    </ListItem>
   );
 };
 

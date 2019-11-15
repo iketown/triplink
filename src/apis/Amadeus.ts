@@ -20,7 +20,6 @@ export const useAmadeus = () => {
           longitude
         })
         .catch((err: any) => console.log("amadeus ERROR", err));
-      console.log("response amadeus", response);
       if (!response) return null;
       return response.data;
     },
@@ -33,7 +32,6 @@ export const useAmadeus = () => {
     const response: AirportSearchResult = await amadeus.referenceData.locations
       .get({ keyword, subType: "AIRPORT" })
       .catch((err: any) => console.log("amadeus ERROR", err));
-    console.log("response amadeus", response);
     if (response) return response.data;
   }, []);
 

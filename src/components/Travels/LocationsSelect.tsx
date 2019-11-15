@@ -45,10 +45,7 @@ const LocationsSelect = ({
         {locations.map((loc, index) => {
           return (
             <MenuItem key={loc.placeId} dense value={loc.placeId}>
-              <ListItemText
-                primary={loc.locShortName}
-                secondary={loc.venueName}
-              />
+              <ListItemText primary={loc.shortName} secondary={loc.venueName} />
             </MenuItem>
           );
         })}
