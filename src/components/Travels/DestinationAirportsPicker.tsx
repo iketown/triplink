@@ -11,6 +11,7 @@ import { Field } from "react-final-form";
 import { LocBasicType } from "../Locations/location.types";
 import { AirportResult } from "../../apis/amadeus.types";
 import AirportAC from "./AirportACDownshift";
+import { useField } from "react-final-form";
 //
 //
 export const DestinationAirportsPicker = ({
@@ -22,6 +23,11 @@ export const DestinationAirportsPicker = ({
   arriving?: boolean;
   closeAirports?: (AirportResult | undefined)[];
 }) => {
+  const {
+    input: { value: otherAP }
+  } = useField(arriving ? "fromAirport" : "toAirport");
+  let disableIata = otherAP && otherAP.iataCode;
+
   return (
     <Field name={arriving ? "toAirport" : "fromAirport"}>
       {({ input, meta }) => {
@@ -33,6 +39,7 @@ export const DestinationAirportsPicker = ({
                 closeAirports={closeAirports || []}
                 arriving={arriving}
                 meta={meta}
+                disableIata={disableIata}
               />
             </Grid>
           </Grid>

@@ -62,6 +62,16 @@ const dialogReducer = (state = initialState, action) => {
         initialValues
       };
     }
+    case "CREATE_HOTEL":
+    case "EDIT_HOTEL": {
+      const { initialValues } = action;
+      return {
+        ...state,
+        open: true,
+        formType: "hotel",
+        initialValues
+      };
+    }
     default:
       return state;
   }

@@ -44,7 +44,13 @@ interface PlaceType {
   };
 }
 
-export default function GooglePlacesAC({ setLocation }: { setLocation?: any }) {
+export default function GooglePlacesAC({
+  setLocation,
+  label = "Add a location"
+}: {
+  setLocation?: any;
+  label?: string;
+}) {
   const classes = useStyles();
   const [inputValue, setInputValue] = React.useState("");
   const [options, setOptions] = React.useState<PlaceType[]>([]);
@@ -165,7 +171,7 @@ export default function GooglePlacesAC({ setLocation }: { setLocation?: any }) {
       renderInput={params => (
         <TextField
           {...params}
-          label="Add a location"
+          label={label}
           variant="outlined"
           fullWidth
           onChange={handleChange}

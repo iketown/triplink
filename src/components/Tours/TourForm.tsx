@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
-import { useFirebaseCtx } from '../Firebase'
-import TextInput from '../Forms/inputs/TextInput'
-import DateInput from '../Forms/inputs/DateInput'
-import { Form } from 'react-final-form'
+import React, { useState } from "react";
+import { useFirebaseCtx } from "../Firebase";
+import TextInput from "../Forms/inputs/TextInput";
+import DateInput from "../Forms/inputs/DateInput";
+import { Form } from "react-final-form";
 import {
   Button,
   Grid,
@@ -11,45 +11,36 @@ import {
   CardContent,
   CardActions,
   Typography
-} from '@material-ui/core'
-import moment, { Moment } from 'moment'
+} from "@material-ui/core";
+import moment, { Moment } from "moment";
 
 interface TourInitialValues {
-  startDate: Moment
-  endDate: Moment
-  name: string
-  id?: string
+  startDate: Moment;
+  endDate: Moment;
+  name: string;
+  id?: string;
 }
 interface TourFormProps {
-  initialValues: TourInitialValues
+  initialValues: TourInitialValues;
 }
 const TourForm = ({ initialValues }: TourFormProps) => {
-  const { doCreateTour, doUpdateTour } = useFirebaseCtx()
-  const [editing, setEditing] = useState(!!initialValues.id)
-  const toggleEditing = () => setEditing(old => !old)
+  const { doCreateTour } = useFirebaseCtx();
+  const [editing, setEditing] = useState(!!initialValues.id);
+  const toggleEditing = () => setEditing(old => !old);
   const handleSubmit = async ({
     name,
     startDate,
     endDate
   }: {
-    name: string
-    startDate: Moment
-    endDate: Moment
+    name: string;
+    startDate: Moment;
+    endDate: Moment;
   }) => {
     if (!initialValues.id) {
-      const response = await doCreateTour(name, startDate, endDate)
-      console.log('response', response)
+      const response = await doCreateTour(name, startDate, endDate);
+      console.log("response", response);
     }
-    if (initialValues.id) {
-      const response = await doUpdateTour(
-        name,
-        startDate,
-        endDate,
-        initialValues.id
-      )
-      console.log('response', response)
-    }
-  }
+  };
 
   return (
     <Form onSubmit={handleSubmit} initialValues={initialValues}>
@@ -69,36 +60,36 @@ const TourForm = ({ initialValues }: TourFormProps) => {
                 </Grid>
               </Grid>
             </CardContent>
-            <CardActions style={{ justifyContent: 'flex-end' }}>
+            <CardActions style={{ justifyContent: "flex-end" }}>
               <Button variant="contained" color="primary" type="submit">
                 Save
               </Button>
             </CardActions>
           </form>
-        )
+        );
       }}
     </Form>
-  )
-}
+  );
+};
 
-export default TourForm
+export default TourForm;
 
 const DateDisplay = ({
   date,
-  label = 'starts',
+  label = "starts",
   toggleEditing
 }: {
-  date: Moment
-  label?: string
-  toggleEditing: () => void
+  date: Moment;
+  label?: string;
+  toggleEditing: () => void;
 }) => {
   return (
     <div>
       <Typography color="textSecondary" variant="caption">
         {label}
       </Typography>
-      <Typography>{date.format('MMM D')}</Typography>
+      <Typography>{date.format("MMM D")}</Typography>
       <Button onClick={toggleEditing}>EDIT</Button>
     </div>
-  )
-}
+  );
+};

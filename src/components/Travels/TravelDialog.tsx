@@ -3,7 +3,7 @@ import { ITravelDialog, TravelTypes } from "./travel.types";
 import { useDialogCtx } from "../Dialogs/DialogCtx";
 import { Grid, Button } from "@material-ui/core";
 import ShowMe from "../../utils/ShowMe";
-import { useAmadeus } from "../../apis/Amadeus";
+import { amadeusFxns } from "../../apis/Amadeus";
 import DestinationAirportsPicker from "./DestinationAirportsPicker";
 import { Form, Field } from "react-final-form";
 import FlightForm from "./FlightForm";

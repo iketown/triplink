@@ -16,7 +16,7 @@ import moment from "moment-timezone";
 import TimeInput from "../Forms/inputs/TimeInput";
 import { LocBasicType, LocationType } from "../Locations/location.types";
 import { DateTimeInput } from "../Forms/inputs/DateTimeInput";
-import { useAmadeus } from "../../apis/Amadeus";
+import { amadeusFxns } from "../../apis/Amadeus";
 import { AirportResult } from "../../apis/amadeus.types";
 //
 //
@@ -28,7 +28,7 @@ export const EventDialog = ({
   handleClose: () => void;
 }) => {
   const { doCreateLocation, doCreateEvent, doEditEvent } = useFirebaseCtx();
-  const { getAirportsNearPoint } = useAmadeus();
+  const { getAirportsNearPoint } = amadeusFxns();
   const handleSubmit = async (values: any) => {
     // save location
     let airportsAll = await getAirportsNearPoint(

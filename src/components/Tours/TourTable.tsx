@@ -9,7 +9,12 @@ import { getArrayOfDates } from "../../utils/dateFxns";
 import moment from "moment";
 import { TourEvent } from "../Events/event.types";
 import { Typography, Chip, IconButton } from "@material-ui/core";
-import { StarBorder, LocalAirport } from "@material-ui/icons";
+import {
+  StarBorder,
+  LocalAirport,
+  Hotel,
+  HotelOutlined
+} from "@material-ui/icons";
 import { FaPlus } from "react-icons/fa";
 import { useDialogCtx } from "../Dialogs/DialogCtx";
 //
@@ -30,7 +35,8 @@ export const TourTable = ({ tour }: ITourTable) => {
     //
     return dates.map(date => {
       const tableEvents = eventsObj[date] || [];
-      return { date, tableEvents, flights: [] };
+      // TODO populate flights and hotels into this object
+      return { date, tableEvents, flights: [], hotels: [] };
     });
   }, [eventsObj]);
   return (
@@ -57,27 +63,21 @@ export const TourTable = ({ tour }: ITourTable) => {
                 />
               )
             },
-            { title: "Hotels" }
+            {
+              title: "Hotels",
+              render: data => {
+                return (
+                  <TableHotelRender
+                    date={data.date}
+                    tourId={tour.id}
+                    hotels={data.hotels}
+                  />
+                );
+              }
+            }
           ]}
           //@ts-ignore
           data={data}
-          // actions={[
-          //   {
-          //     icon: 'save',
-          //     tooltip: 'Save User',
-          //     onClick: (event, data) => {
-          //       console.log('data', data)
-          //     }
-          //   },
-          //   {
-          //     icon: 'delete',
-          //     tooltip: 'Delete User',
-          //     onClick: (event, rowData) => {
-          //       console.log('events', event)
-          //       console.log('rowData', rowData)
-          //     }
-          //   }
-          // ]}
           title={
             <div>
               <Typography variant="subtitle2">
@@ -160,5 +160,31 @@ const AddButton = ({ onClick = () => {} }: { onClick?: () => void }) => {
     <IconButton size="small" onClick={onClick}>
       <FaPlus size={15} />
     </IconButton>
+  );
+};
+
+const TableHotelRender = ({
+  date,
+  tourId,
+  hotels
+}: {
+  date: any;
+  tourId: any;
+  hotels: any;
+}) => {
+  const { dispatch } = useDialogCtx();
+  const handleClick = () => {
+    const initialValues = {
+      date,
+      tourId
+    };
+    dispatch({ type: "CREATE_HOTEL", initialValues });
+  };
+  return (
+    <div>
+      <IconButton onClick={handleClick} size="small">
+        <Hotel />
+      </IconButton>
+    </div>
   );
 };

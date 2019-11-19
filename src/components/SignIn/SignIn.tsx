@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   TextField,
   Grid,
@@ -9,61 +9,67 @@ import {
   CardHeader,
   CardContent,
   CardActions
-} from '@material-ui/core'
+} from "@material-ui/core";
 import {
   makeStyles,
   createStyles,
   Theme,
   useTheme
-} from '@material-ui/core/styles'
-import { Form, Field } from 'react-final-form'
-import TextInput from '../Forms/inputs/TextInput'
-import { useFirebaseCtx } from '../Firebase'
-import { routes } from '../../constants/routes'
-import { RouteComponentProps } from 'react-router'
+} from "@material-ui/core/styles";
+import { Form, Field } from "react-final-form";
+import TextInput from "../Forms/inputs/TextInput";
+import { useFirebaseCtx } from "../Firebase";
+import { routes } from "../../constants/routes";
+import { RouteComponentProps } from "react-router";
+
+// bbs groupId GjiDCAUjn037dIcgJ4CG
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center'
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center"
     },
     formField: {
-      textAlign: 'center'
+      textAlign: "center"
     },
     header: {
-      textAlign: 'center'
+      textAlign: "center"
     },
     button: {
-      padding: '2rem',
-      textAlign: 'center'
+      padding: "2rem",
+      textAlign: "center"
     }
   })
-)
+);
 
-const SignInUp = (props: RouteComponentProps) => {
-  const [signingUp, setSigningUp] = useState(false)
+interface ISignInUp extends RouteComponentProps {
+  invitationGroupId?: string;
+}
+
+const SignInUp = (props: ISignInUp) => {
+  const [signingUp, setSigningUp] = useState(false);
   const {
     doCreateUserWithEmailAndPassword,
     doSignInWithEmailAndPassword
-  } = useFirebaseCtx()
-  const ss = useStyles()
-  const theme = useTheme()
+  } = useFirebaseCtx();
+  const ss = useStyles();
+  const theme = useTheme();
   const handleSubmit = async ({
     email,
     password,
     displayName,
     photoURL
   }: {
-    email: string
-    password: string
-    displayName: string
-    photoURL: string
+    email: string;
+    password: string;
+    displayName: string;
+    photoURL: string;
   }) => {
     const signInFxn = signingUp
       ? doCreateUserWithEmailAndPassword
-      : doSignInWithEmailAndPassword
+      : doSignInWithEmailAndPassword;
 
     return signInFxn(email, password)
       .then(async response => {
@@ -71,30 +77,30 @@ const SignInUp = (props: RouteComponentProps) => {
           await response.user.updateProfile({
             displayName,
             photoURL
-          })
+          });
         }
-        props.history.push(routes.home)
+        props.history.push(routes.home);
       })
-      .catch(err => err.message)
-  }
+      .catch(err => err.message);
+  };
   return (
     <Container className={ss.root}>
       <Form onSubmit={handleSubmit}>
         {({ handleSubmit, errors, submitErrors }) => {
-          console.log('submitErrors', submitErrors)
+          console.log("submitErrors", submitErrors);
           return (
             <form onSubmit={handleSubmit}>
               <Card>
                 <CardHeader
-                  title={signingUp ? 'Sign up' : 'Sign In'}
+                  title={signingUp ? "Sign up" : "Sign In"}
                   action={
                     <Button
                       onClick={() => setSigningUp(old => !old)}
                       color="primary"
                     >
                       {signingUp
-                        ? 'been here before?  SIGN IN'
-                        : 'first time? SIGN UP'}
+                        ? "been here before?  SIGN IN"
+                        : "first time? SIGN UP"}
                     </Button>
                   }
                 />
@@ -124,17 +130,17 @@ const SignInUp = (props: RouteComponentProps) => {
                 </CardActions>
               </Card>
             </form>
-          )
+          );
         }}
       </Form>
     </Container>
-  )
-}
+  );
+};
 
-export default SignInUp
+export default SignInUp;
 
 const ExtraSignUpFields = () => {
-  const ss = useStyles()
+  const ss = useStyles();
 
   return (
     <>
@@ -152,5 +158,5 @@ const ExtraSignUpFields = () => {
         <TextInput label="photo url" name="photoURL" />
       </Grid>
     </>
-  )
-}
+  );
+};

@@ -15,24 +15,29 @@ import styled from "styled-components";
 import { ArrowDropDown } from "@material-ui/icons";
 import { AirportResult } from "../../apis/amadeus.types";
 import ShowMe from "../../utils/ShowMe";
-import { useAmadeus } from "../../apis/Amadeus";
+import { amadeusFxns } from "../../apis/Amadeus";
 
 const AirportACDownshift = ({
   onSelect,
   closeAirports,
   arriving,
-  meta
+  meta,
+  disableIata,
+  label,
+  initialValue
 }: {
   onSelect: (ap: AirportResult) => void;
   closeAirports?: (AirportResult | undefined)[];
   arriving?: boolean;
   meta?: any;
+  disableIata?: string;
+  label?: string;
+  initialValue?: string;
 }) => {
   const [airports, setAirports] = useState<(AirportResult | undefined)[]>([]);
+  const [searchString, setSearchString] = useState(initialValue);
 
-  const [searchString, setSearchString] = useState("");
-
-  const { getAirportsByKeyword } = useAmadeus();
+  const { getAirportsByKeyword } = amadeusFxns();
 
   const initialAirports = useMemo(() => {
     const _initialAirports =
@@ -60,7 +65,12 @@ const AirportACDownshift = ({
   );
   useEffect(() => {
     let active = true;
-    if (searchString && searchString.length > 2 && searchString.length < 10) {
+    if (
+      searchString &&
+      searchString.length > 2 &&
+      searchString.length < 10 &&
+      searchString !== initialValue
+    ) {
       dbApCall.current(searchString, active);
     }
     return () => {
@@ -75,7 +85,7 @@ const AirportACDownshift = ({
           item ? `${item.iataCode} - ${item.detailedName}` : ""
         }
         onSelect={onSelect}
-        initialIsOpen={true}
+        // initialIsOpen={true}
       >
         {({
           getInputProps,
@@ -96,7 +106,10 @@ const AirportACDownshift = ({
                   fullWidth
                   error={meta && meta.dirty && !!meta.error}
                   helperText={meta && meta.dirty && meta.error}
-                  label={arriving ? "search TO airport" : "search FROM airport"}
+                  label={
+                    label ||
+                    (arriving ? "search TO airport" : "search FROM airport")
+                  }
                   {...getInputProps()}
                   InputProps={{
                     endAdornment: (
@@ -119,6 +132,7 @@ const AirportACDownshift = ({
                     if (!ap) return null;
                     return (
                       <AirportListItem
+                        disabled={disableIata === ap.iataCode}
                         key={ap.iataCode}
                         {...{ ap, index, highlightedIndex, getItemProps }}
                       />
@@ -137,6 +151,7 @@ const AirportACDownshift = ({
                       const indexOffset = airports.length;
                       return (
                         <AirportListItem
+                          disabled={disableIata === ap.iataCode}
                           key={ap.iataCode}
                           {...{
                             ap,
@@ -162,15 +177,19 @@ interface IAirportListItem {
   index: number;
   highlightedIndex: number | null;
   getItemProps: (options: GetItemPropsOptions<any>) => any;
+  disabled?: boolean;
 }
 const AirportListItem = ({
   ap,
   index,
   getItemProps,
-  highlightedIndex
+  highlightedIndex,
+  disabled
 }: IAirportListItem) => {
+  if (disabled) return null;
   return (
     <ListItem
+      disabled={disabled}
       dense
       key={ap.iataCode}
       {...getItemProps({

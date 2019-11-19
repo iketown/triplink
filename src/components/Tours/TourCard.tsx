@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -10,24 +10,25 @@ import {
   Collapse,
   IconButton,
   Icon
-} from '@material-ui/core'
-import { ArrowDropDown } from '@material-ui/icons'
-import moment from 'moment'
-import TourForm from './TourForm'
-import TourEvents from '../Events/TourEvents'
-import { Tour } from './types'
-import styled from 'styled-components'
-import { TourTravels } from '../Travels/TourTravels'
-import RotatingArrowButton from '../Cards/RotatingArrowButton'
-import TourTable from './TourTable'
+} from "@material-ui/core";
+import { ArrowDropDown } from "@material-ui/icons";
+import moment from "moment";
+import TourForm from "./TourForm";
+import TourEvents from "../Events/TourEvents";
+import TourPeople from "../People/TourPeople";
+import { Tour } from "./types";
+import styled from "styled-components";
+import { TourTravels } from "../Travels/TourTravels";
+import RotatingArrowButton from "../Cards/RotatingArrowButton";
+import TourTable from "./TourTable";
 interface TabPanelProps {
-  children?: React.ReactNode
-  index: any
-  value: any
+  children?: React.ReactNode;
+  index: any;
+  value: any;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props
+  const { children, value, index, ...other } = props;
 
   return (
     <Typography
@@ -40,40 +41,40 @@ function TabPanel(props: TabPanelProps) {
     >
       <Box p={3}>{children}</Box>
     </Typography>
-  )
+  );
 }
 
 export const TourCard = ({ tour }: { tour: Tour }) => {
-  const [tabIndex, setTabIndex] = useState(0)
-  const [expanded, setExpanded] = useState(true)
+  const [tabIndex, setTabIndex] = useState(4);
+  const [expanded, setExpanded] = useState(true);
   const handleSetTab = (e: React.ChangeEvent<{}>, index: number) => {
-    setTabIndex(index)
-  }
+    setTabIndex(index);
+  };
   const initialValues = {
     ...tour,
     startDate: moment(tour.startDate),
     endDate: moment(tour.endDate)
-  }
+  };
   const tourItems = [
     <TourTable tour={tour} />,
     <TourForm initialValues={initialValues} />,
     <TourEvents tour={tour} />,
     <TourTravels tour={tour} />,
-    () => <div>People</div>
-  ]
+    <TourPeople tour={tour} />
+  ];
   return (
-    <Card style={{ marginBottom: '1rem' }}>
+    <Card style={{ marginBottom: "1rem" }}>
       <CardHeader
         title={tour.name}
         subheader={`${initialValues.startDate.format(
-          'MMM DD'
+          "MMM DD"
         )} - ${initialValues.endDate.format(
-          'MMM DD'
-        )}, ${initialValues.endDate.format('YYYY')}`}
-        titleTypographyProps={{ variant: 'subtitle2' }}
+          "MMM DD"
+        )}, ${initialValues.endDate.format("YYYY")}`}
+        titleTypographyProps={{ variant: "subtitle2" }}
         subheaderTypographyProps={{
-          variant: 'caption',
-          color: 'textSecondary'
+          variant: "caption",
+          color: "textSecondary"
         }}
         action={
           <RotatingArrowButton
@@ -84,28 +85,28 @@ export const TourCard = ({ tour }: { tour: Tour }) => {
       />
       <Collapse in={expanded}>
         <Tabs style={{ flexGrow: 1 }} value={tabIndex} onChange={handleSetTab}>
-          <Tab label={'Table'}></Tab>
-          <Tab label={'General'}></Tab>
-          <Tab label={'Events'}></Tab>
-          <Tab label={'Travels'}></Tab>
-          <Tab label={'People'}></Tab>
+          <Tab label={"Table"}></Tab>
+          <Tab label={"General"}></Tab>
+          <Tab label={"Events"}></Tab>
+          <Tab label={"Travels"}></Tab>
+          <Tab label={"People"}></Tab>
         </Tabs>
         {tourItems[tabIndex]}
       </Collapse>
     </Card>
-  )
-}
+  );
+};
 
 export const NewTourCard = () => {
   const defaultValues = {
     startDate: moment(),
-    endDate: moment().add(1, 'week'),
-    name: ''
-  }
+    endDate: moment().add(1, "week"),
+    name: ""
+  };
   return (
-    <Card style={{ maxWidth: '25rem' }}>
+    <Card style={{ maxWidth: "25rem" }}>
       <TourForm initialValues={defaultValues} />
     </Card>
-  )
-}
-export default TourCard
+  );
+};
+export default TourCard;

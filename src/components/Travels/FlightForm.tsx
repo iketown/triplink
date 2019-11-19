@@ -8,6 +8,7 @@ import DateInput from "../Forms/inputs/DateInput";
 import { useEvents } from "../Events/useEvents";
 import DestinationAirportsPicker from "./DestinationAirportsPicker";
 import GoogMap from "../Maps/GoogMap";
+
 const FlightForm = () => {
   const { state } = useDialogCtx();
   const { events, closeAirports } = useEvents(state.initialValues.tourId);
@@ -64,9 +65,7 @@ const FlightForm = () => {
                   <DateInput name="date" label="Date" />
                   <DestinationAirportsPicker
                     closeAirports={closeAirports || []}
-                    locations={locations.filter(
-                      loc => loc.airport.iataCode !== values.from
-                    )}
+                    locations={locations}
                   />
                   <DestinationAirportsPicker
                     closeAirports={closeAirports || []}

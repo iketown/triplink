@@ -1,84 +1,89 @@
-import { auth } from 'firebase/app'
-import firebase from 'firebase'
-import { FirebaseDatabase } from '@firebase/database-types'
-import 'firebase/auth'
-import { firebaseConfigDEV, firebaseConfig } from './config'
-import moment, { Moment } from 'moment'
-import { LocationType } from '../Locations/location.types'
-import { TourEvent } from '../Events/event.types'
-
+import { auth } from "firebase/app";
+import firebase from "firebase";
+import { FirebaseDatabase } from "@firebase/database-types";
+import "firebase/auth";
+import { firebaseConfigDEV, firebaseConfig } from "./config";
+import moment, { Moment } from "moment";
+import { Airport, AirportResult } from "../../apis/amadeus.types";
+import { LocationType } from "../Locations/location.types";
+import { TourEvent } from "../Events/event.types";
+import { Person } from "../People/people.types";
+import { amadeusFxns } from "../../apis/Amadeus";
+import { removeMissing } from "../../utils/general";
+//
+//
 const config =
-  process.env.NODE_ENV === 'production' ? firebaseConfig : firebaseConfigDEV
+  process.env.NODE_ENV === "production" ? firebaseConfig : firebaseConfigDEV;
 
 class Firebase {
-  firestore: firebase.firestore.Firestore
-  auth: auth.Auth
-  db: firebase.database.Database
-  account: string
+  firestore: firebase.firestore.Firestore;
+  auth: auth.Auth;
+  db: firebase.database.Database;
+  account: string;
   constructor() {
     if (!firebase.apps.length) {
-      firebase.initializeApp(config)
+      firebase.initializeApp(config);
     }
-    this.auth = firebase.auth()
-    this.db = firebase.database()
-    this.firestore = firebase.firestore()
-    this.account = ''
+    this.auth = firebase.auth();
+    this.db = firebase.database();
+    this.firestore = firebase.firestore();
+    this.account = "";
   }
   // util fxns //
-  private getUserProfile = () => {
-    const uid = this.auth.currentUser && this.auth.currentUser.uid
+  getUserProfile = () => {
+    const uid = this.auth.currentUser && this.auth.currentUser.uid;
     return this.firestore
       .doc(`/userProfiles/${uid}`)
       .get()
-      .then(doc => doc.data())
-  }
+      .then(doc => doc.data());
+  };
 
   //
   doCreateUserWithEmailAndPassword = (email: string, password: string) => {
-    return this.auth.createUserWithEmailAndPassword(email, password)
-  }
+    return this.auth.createUserWithEmailAndPassword(email, password);
+  };
   doSignInWithEmailAndPassword = (email: string, password: string) => {
-    return this.auth.signInWithEmailAndPassword(email, password)
-  }
-  doSignOut = () => this.auth.signOut()
-  doPasswordReset = (email: string) => this.auth.sendPasswordResetEmail(email)
+    return this.auth.signInWithEmailAndPassword(email, password);
+  };
+  doSignOut = () => this.auth.signOut();
+  doPasswordReset = (email: string) => this.auth.sendPasswordResetEmail(email);
   doPasswordUpdate = (password: string) => {
     if (this.auth.currentUser) {
-      return this.auth.currentUser.updatePassword(password)
+      return this.auth.currentUser.updatePassword(password);
     }
-  }
+  };
   doUpdateProfile = (updateObj: any) => {
-    const uid = this.auth.currentUser && this.auth.currentUser.uid
-    if (!uid) return null
-    const profileRef = this.firestore.doc(`userProfiles/${uid}`)
-    return profileRef.update(updateObj)
-  }
+    const uid = this.auth.currentUser && this.auth.currentUser.uid;
+    if (!uid) return null;
+    const profileRef = this.firestore.doc(`userProfiles/${uid}`);
+    return profileRef.update(updateObj);
+  };
   // LOCATIONS //
   doCreateLocation = async (loc: LocationType) => {
-    console.log('creating LOC', loc)
-    const myProfile = await this.getUserProfile()
+    console.log("creating LOC", loc);
+    const myProfile = await this.getUserProfile();
     if (!myProfile) {
-      console.log('missing profile')
-      return null
+      console.log("missing profile");
+      return null;
     }
     const locRef = this.firestore.collection(
       `accounts/${myProfile.currentAccount}/locations`
-    )
+    );
     const previousLocs = await locRef
-      .where('lat', '==', loc.lat)
-      .where('lng', '==', loc.lng)
+      .where("lat", "==", loc.lat)
+      .where("lng", "==", loc.lng)
       .get()
       .then(snapshot => {
-        if (snapshot.empty) return false
-        const _foundLocs: LocationType[] = []
+        if (snapshot.empty) return false;
+        const _foundLocs: LocationType[] = [];
         snapshot.forEach(doc => {
           //@ts-ignore
-          _foundLocs.push({ ...doc.data(), id: doc.id })
-        })
-        return _foundLocs
-      })
+          _foundLocs.push({ ...doc.data(), id: doc.id });
+        });
+        return _foundLocs;
+      });
     if (previousLocs) {
-      return previousLocs[0]
+      return previousLocs[0];
     } else {
       return locRef
         .add(loc)
@@ -86,127 +91,247 @@ class Firebase {
         .then((doc): LocationType | undefined => {
           if (doc.exists) {
             //@ts-ignore
-            return { ...doc.data(), id: doc.id }
+            return { ...doc.data(), id: doc.id };
           }
-        })
+        });
     }
-  }
+  };
 
   // EVENTS //
   doCreateEvent = async (event: TourEvent) => {
-    const myProfile = await this.getUserProfile()
-    if (!myProfile) return null
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
     const eventRef = this.firestore.collection(
       `accounts/${myProfile.currentAccount}/events`
-    )
-    const startDate = moment(event.startDate).format('YYYY-MM-DD')
+    );
+    const startDate = moment(event.startDate).format("YYYY-MM-DD");
     return eventRef.add({
       ...event,
       startDate
-    })
-  }
+    });
+  };
   doEditEvent = async (event: TourEvent) => {
-    const myProfile = await this.getUserProfile()
-    if (!myProfile) return null
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
     const eventRef = this.firestore
       .collection(`accounts/${myProfile.currentAccount}/events`)
-      .doc(event.id)
-    const startDate = moment(event.startDate).format('YYYY-MM-DD')
+      .doc(event.id);
+    const startDate = moment(event.startDate).format("YYYY-MM-DD");
 
     return eventRef.update({
       ...event,
       startDate
-    })
-  }
+    });
+  };
   doChangeEventSubTour = async (eventId: string, subTourIndex: number) => {
-    const myProfile = await this.getUserProfile()
-    if (!myProfile) return null
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
     const eventRef = this.firestore
       .collection(`accounts/${myProfile.currentAccount}/events`)
-      .doc(eventId)
-    return eventRef.update({ subTourIndex })
-  }
+      .doc(eventId);
+    return eventRef.update({ subTourIndex });
+  };
   // TOURS //
   doCreateTour = async (name: string, startDate: Moment, endDate: Moment) => {
     if (!this.auth.currentUser) {
-      console.log('NO USER!')
-      return null
+      console.log("NO USER!");
+      return null;
     }
-    const myProfile = await this.getUserProfile()
-    if (!myProfile) return null
-    const uid = this.auth.currentUser.uid
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    const uid = this.auth.currentUser.uid;
     const toursRef = this.firestore.collection(
       `accounts/${myProfile.currentAccount}/tours`
-    )
+    );
     const response = await toursRef.add({
       name,
       createdBy: uid,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString()
-    })
-    console.log('response', response)
-    return response
-  }
-  doUpdateTour = async (
-    name: string,
-    startDate: Moment,
-    endDate: Moment,
-    tourId: string
-  ) => {
-    if (!this.auth.currentUser) {
-      console.log('NO USER!')
-      return null
-    }
-    const tourRef = this.firestore.doc(`tours/${tourId}`)
-    const updateObj = {
-      name,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-    }
-    return tourRef.update(updateObj)
-  }
+    });
+    console.log("response", response);
+    return response;
+  };
+
+  private getTourRef = async (tourId: string) => {
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    const tourRef = this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/tours/${tourId}`
+    );
+    return tourRef;
+  };
 
   doAdjustSubTours = async (
     tourId: string,
     index: number,
     startDate: string
   ) => {
-    const myProfile = await this.getUserProfile()
-    if (!myProfile) return null
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
     const tourRef = this.firestore.doc(
       `accounts/${myProfile.currentAccount}/tours/${tourId}`
-    )
-    const tour = await tourRef.get().then(doc => doc.data())
-    const subTours = (tour && tour.subTours) || { startTimes: [] }
-    subTours.startTimes[index] = startDate
+    );
+    const tour = await tourRef.get().then(doc => doc.data());
+    const subTours = (tour && tour.subTours) || { startTimes: [] };
+    subTours.startTimes[index] = startDate;
     const prevDate =
-      !!subTours.startTimes[index - 1] && subTours.startTimes[index - 1]
+      !!subTours.startTimes[index - 1] && subTours.startTimes[index - 1];
     const nextDate =
-      !!subTours.startTimes[index + 1] && subTours.startTimes[index + 1]
-    subTours.startTimes.sort()
-    // if (index === 0) throw new Error('dont set zero.  start with one')
-    // if (prevDate > startDate)
-    //   throw new Error(
-    //     `out of order. ${startDate} should be later than ${prevDate}`
-    //   )
-    // if (nextDate < startDate)
-    //   throw new Error(
-    //     `out of order. ${nextDate} should be later than ${startDate}`
-    //   )
-    return tourRef.update({ subTours })
-  }
+      !!subTours.startTimes[index + 1] && subTours.startTimes[index + 1];
+    subTours.startTimes.sort();
+
+    return tourRef.update({ subTours });
+  };
   doUpdateSubTourEvents = async (
     events: string[],
     subTourId: string,
     tourId: string
   ) => {
-    const myProfile = await this.getUserProfile()
-    if (!myProfile) return null
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
     const subTourRef = this.firestore.doc(
       `accounts/${myProfile.currentAccount}/tours/${tourId}/subTours/${subTourId}`
-    )
-    subTourRef.update({ events })
-  }
+    );
+    subTourRef.update({ events });
+  };
+  // PEOPLE //
+  private addAirportsToPerson = async (person: Person) => {
+    if (!!person.homeAddress) {
+      //@ts-ignore
+      person.homeAddress = removeMissing(person.homeAddress);
+      //@ts-ignore
+      const { lat, lng } = person.homeAddress;
+      if (!person.airports) {
+        const { getAirportsNearPoint, mapAPResultToAP } = amadeusFxns();
+        if (lat && lng) {
+          const airports = await getAirportsNearPoint(lat, lng);
+          if (airports) {
+            person.airports = airports
+              .slice(0, 3)
+              .map(mapAPResultToAP)
+              .sort((a, b) => (a.distance.value < b.distance.value ? -1 : 1));
+            person.airports[0].preferred = true;
+          }
+        }
+      }
+    }
+    return person;
+  };
+  doResetAirports = async (person: Person) => {
+    const { homeAddress, id } = person;
+    //@ts-ignore
+    this.doUpdatePerson({ homeAddress, id });
+  };
+  doCreatePerson = async (person: Person) => {
+    // then this will need to connect to an actual persons account.
+    // can i create a person without signing them in automatically?
+    // create a special login page - you would send a group member there
+    // then they sign up,  and doing so puts your company
+    // in their profile.  (groups I'm a part of)
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    const peopleRef = this.firestore.collection(
+      `accounts/${myProfile.currentAccount}/people`
+    );
+    const personWithAirports = await this.addAirportsToPerson(person);
+    const newPerson = await peopleRef.add(removeMissing(personWithAirports));
+    return newPerson;
+  };
+  doUpdatePerson = async (person: Person) => {
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    if (!person.id) throw new Error("no person id received");
+    const personRef = this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/people/${person.id}`
+    );
+    const personWithAirports = await this.addAirportsToPerson(person);
+    const response = await personRef.update(removeMissing(personWithAirports));
+    console.log("response", response);
+  };
+  doCreateGroup = async (name: string) => {
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    if (!name) throw new Error("name required");
+    const groupsRef = this.firestore.collection(
+      `accounts/${myProfile.currentAccount}/groups`
+    );
+    const response = await groupsRef.add({ name, members: [] });
+    console.log("create group response", response);
+  };
+  doUpdateGroup = async ({
+    groupId,
+    updateObj
+  }: {
+    groupId: string;
+    updateObj: {
+      name?: string;
+      members?: string[];
+      colorIndex?: number;
+    };
+  }) => {
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    const groupRef = this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/groups/${groupId}`
+    );
+    const response = await groupRef.update(updateObj);
+  };
+  doDeleteGroup = async (groupId: string) => {
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    const groupRef = this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/groups/${groupId}`
+    );
+    const response = await groupRef.delete();
+
+    console.log("response", response);
+  };
+  private getGroupRef = async (groupId: string) => {
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) return null;
+    return this.firestore.doc(
+      `accounts/${myProfile.currentAccount}/groups/${groupId}`
+    );
+  };
+  doChangePersonInGroup = async (
+    personId: string,
+    groupId: string,
+    add?: boolean
+  ) => {
+    const groupRef = await this.getGroupRef(groupId);
+    return (
+      groupRef &&
+      groupRef.update({
+        members: firebase.firestore.FieldValue[
+          add ? "arrayUnion" : "arrayRemove"
+        ](personId)
+      })
+    );
+  };
+  doChangePersonInTour = async (
+    personId: string,
+    tourId: string,
+    add?: boolean
+  ) => {
+    const tourRef = await this.getTourRef(tourId);
+    return (
+      tourRef &&
+      tourRef.update({
+        tourMembers: firebase.firestore.FieldValue[
+          add ? "arrayUnion" : "arrayRemove"
+        ](personId)
+      })
+    );
+  };
+  doAddPeopleToTour = async (personIds: string[], tourId: string) => {
+    const tourRef = await this.getTourRef(tourId);
+    if (!tourRef) return null;
+    const tourInfo = await tourRef.get().then(doc => doc.data());
+    const tourMembers = (tourInfo && tourInfo.tourMembers) || [];
+    const newTourMembers = Array.from(new Set([...tourMembers, ...personIds]));
+    tourRef.update({ tourMembers: newTourMembers });
+  };
 }
 
-export default Firebase
+export default Firebase;
