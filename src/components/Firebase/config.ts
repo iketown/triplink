@@ -7,15 +7,9 @@ const {
   REACT_APP_MESSAGING_SENDER_ID,
   REACT_APP_APP_ID,
   REACT_APP_MEASUREMENT_ID,
-  REACT_APP_API_KEY_DEV,
-  REACT_APP_AUTH_DOMAIN_DEV,
-  REACT_APP_DB_URL_DEV,
-  REACT_APP_PROJECT_ID_DEV,
-  REACT_APP_STORAGE_BUCKET_DEV,
-  REACT_APP_MESSAGING_SENDER_ID_DEV,
   REACT_APP_APP_ID_DEV,
   REACT_APP_MEASUREMENT_ID_DEV
-} = process.env
+} = process.env;
 
 export const firebaseConfig = {
   apiKey: REACT_APP_API_KEY,
@@ -26,15 +20,10 @@ export const firebaseConfig = {
   messagingSenderId: REACT_APP_MESSAGING_SENDER_ID,
   appId: REACT_APP_APP_ID,
   measurementId: REACT_APP_MEASUREMENT_ID
-}
+};
 
 export const firebaseConfigDEV = {
-  apiKey: REACT_APP_API_KEY_DEV,
-  authDomain: REACT_APP_AUTH_DOMAIN_DEV,
-  databaseURL: REACT_APP_DB_URL_DEV,
-  projectId: REACT_APP_PROJECT_ID_DEV,
-  storageBucket: REACT_APP_STORAGE_BUCKET_DEV,
-  messagingSenderId: REACT_APP_MESSAGING_SENDER_ID_DEV,
+  ...firebaseConfig,
   appId: REACT_APP_APP_ID_DEV,
   measurementId: REACT_APP_MEASUREMENT_ID_DEV
-}
+};
