@@ -33,6 +33,10 @@ const PersonChip = memo(
         <Chip
           avatar={
             <Avatar
+              style={{
+                width: "28px",
+                height: "28px"
+              }}
               src={
                 person.avatarURL
                   ? addVarsToCloudinaryURL(
