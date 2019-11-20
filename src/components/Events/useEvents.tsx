@@ -4,6 +4,7 @@ import { useFirebaseCtx } from "../Firebase";
 import moment from "moment";
 import { TourEvent } from "./event.types";
 import { AirportResult } from "../../apis/amadeus.types";
+import { amadeusFxns } from "../../apis/Amadeus";
 //
 //
 
@@ -56,4 +57,69 @@ export const useEvents = (tourId: string) => {
   }, [events]);
 
   return { events, eventsObj, closeAirports };
+};
+
+export const useEventFxns = () => {
+  const { getAirportsNearPoint } = amadeusFxns();
+  const { doCreateEvent, doEditEvent, doCreateLocation } = useFirebaseCtx();
+
+  const handleEventSubmit = async (values: any, callback?: () => void) => {
+    // save location
+    let airportsAll = await getAirportsNearPoint(
+      values.location.lat,
+      values.location.lng
+    );
+    if (!airportsAll) airportsAll = [];
+    const locResponse = await doCreateLocation({
+      ...values.location,
+      airports: (airportsAll && airportsAll.slice(0, 3)) || []
+    }).catch(err => console.log("error submitting LOCATION", err));
+    if (!locResponse) return { error: "some kind of error" };
+    const {
+      id,
+      lat,
+      lng,
+      venueName,
+      address,
+      timeZoneId,
+      shortName,
+      placeId
+    } = locResponse;
+    const locBasic = {
+      id,
+      lat,
+      lng,
+      venueName,
+      address,
+      timeZoneId,
+      shortName,
+      placeId,
+      airport: airportsAll[0]
+    };
+    // save event with minimal location info and locId
+    const { startDate, startTime, tourId, subTourIndex } = values;
+    if (values.id) {
+      //@ts-ignore
+      await doEditEvent({
+        startDate,
+        startTime,
+        locBasic,
+        tourId,
+        subTourIndex,
+        id: values.id
+      });
+    } else {
+      //@ts-ignore
+      await doCreateEvent({
+        startDate,
+        startTime,
+        locBasic,
+        tourId,
+        subTourIndex
+      });
+    }
+    callback && callback();
+  };
+
+  return { handleEventSubmit };
 };

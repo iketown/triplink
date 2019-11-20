@@ -97,7 +97,7 @@ export const TourTable = ({ tour }: ITourTable) => {
           }}
         />
       )}
-      <ShowMe obj={tour} name="tour" noModal />
+      <ShowMe obj={tour} name="tour" />
     </div>
   );
 };

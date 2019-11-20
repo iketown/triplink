@@ -1,7 +1,12 @@
-import React from 'react'
+import React from "react";
+import { useTours } from "../Tours/useTours";
 
+//
+//
 const Travels = () => {
-  return <div>TRAVEL</div>
-}
+  const { tours } = useTours();
 
-export default Travels
+  return <div>TRAVEL</div>;
+};
+
+export default Travels;

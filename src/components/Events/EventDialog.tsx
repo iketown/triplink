@@ -18,6 +18,7 @@ import { LocBasicType, LocationType } from "../Locations/location.types";
 import { DateTimeInput } from "../Forms/inputs/DateTimeInput";
 import { amadeusFxns } from "../../apis/Amadeus";
 import { AirportResult } from "../../apis/amadeus.types";
+import { useEventFxns } from "./useEvents";
 //
 //
 export const EventDialog = ({
@@ -29,62 +30,10 @@ export const EventDialog = ({
 }) => {
   const { doCreateLocation, doCreateEvent, doEditEvent } = useFirebaseCtx();
   const { getAirportsNearPoint } = amadeusFxns();
-  const handleSubmit = async (values: any) => {
-    // save location
-    let airportsAll = await getAirportsNearPoint(
-      values.location.lat,
-      values.location.lng
-    );
-    if (!airportsAll) airportsAll = [];
-    const locResponse = await doCreateLocation({
-      ...values.location,
-      airports: (airportsAll && airportsAll.slice(0, 3)) || []
-    }).catch(err => console.log("error submitting LOCATION", err));
-    if (!locResponse) return { error: "some kind of error" };
-    const {
-      id,
-      lat,
-      lng,
-      venueName,
-      address,
-      timeZoneId,
-      shortName,
-      placeId
-    } = locResponse;
-    const locBasic = {
-      id,
-      lat,
-      lng,
-      venueName,
-      address,
-      timeZoneId,
-      shortName,
-      placeId,
-      airport: airportsAll[0]
-    };
-    // save event with minimal location info and locId
-    const { startDate, startTime, tourId, subTourIndex } = values;
-    if (values.id) {
-      //@ts-ignore
-      await doEditEvent({
-        startDate,
-        startTime,
-        locBasic,
-        tourId,
-        subTourIndex,
-        id: values.id
-      });
-    } else {
-      //@ts-ignore
-      await doCreateEvent({
-        startDate,
-        startTime,
-        locBasic,
-        tourId,
-        subTourIndex
-      });
-    }
-    handleClose();
+  const { handleEventSubmit } = useEventFxns();
+
+  const handleSubmit = (values: any) => {
+    handleEventSubmit(values, handleClose);
   };
 
   return (
@@ -148,9 +97,6 @@ export const EventDialog = ({
                     //@ts-ignore
                     timeZoneId={values.location && values.location.timeZoneId}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <SelectInput name="subTourIndex" label="Sub-Tour" />
                 </Grid>
               </Grid>
               <Grid item xs={12} sm={6}>

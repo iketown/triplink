@@ -25,6 +25,7 @@ export type LocBasicType = {
   lat: number;
   lng: number;
   address: string;
+  timeZoneId?: string;
   id?: string;
   airport?: AirportResult;
 };

@@ -23,6 +23,7 @@ import TravelsPage from "../components/Travels/Travels";
 import { RouteComponentProps } from "react-router";
 import { FaSun } from "react-icons/fa";
 import moment from "moment";
+import Timeline from "../components/Timeline/TimelineVis";
 
 type Route = {
   name: string;
@@ -43,7 +44,8 @@ export const routes = {
   events: "/events",
   travel: "/travel",
   people: "/people",
-  day: "/day/:date"
+  day: "/day/:date",
+  timeline: "/timeline/:date"
 };
 
 export const signedOutRoutes: Route[] = [
@@ -85,5 +87,12 @@ export const appRoutes: Route[] = [
     Icon: FaSun,
     component: Day,
     exact: true
+  },
+  {
+    name: "Timeline",
+    route: routes.timeline,
+    linkRoute: `/timeline/${moment().format("YYYY-MM-DD")}`,
+    Icon: FaSun,
+    component: Timeline
   }
 ];

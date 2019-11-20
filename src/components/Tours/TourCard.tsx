@@ -45,7 +45,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const TourCard = ({ tour }: { tour: Tour }) => {
-  const [tabIndex, setTabIndex] = useState(4);
+  const [tabIndex, setTabIndex] = useState(2);
   const [expanded, setExpanded] = useState(true);
   const handleSetTab = (e: React.ChangeEvent<{}>, index: number) => {
     setTabIndex(index);
