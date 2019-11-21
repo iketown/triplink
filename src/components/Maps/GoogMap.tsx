@@ -96,8 +96,7 @@ const GoogMapContainer = ({
         mapContainerStyle={{
           width: "100%",
           minHeight: "200px",
-          height: "100%",
-          margin: "1rem"
+          height: "100%"
         }}
         id="example-map"
         options={options}

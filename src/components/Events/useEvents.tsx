@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import useAuth from "../Account/UserCtx";
 import { useFirebaseCtx } from "../Firebase";
 import moment from "moment";
-import { TourEvent } from "./event.types";
+import { TourEvent, TimeItem } from "./event.types";
 import { AirportResult } from "../../apis/amadeus.types";
 import { amadeusFxns } from "../../apis/Amadeus";
 //
@@ -97,7 +97,7 @@ export const useEventFxns = () => {
       airport: airportsAll[0]
     };
     // save event with minimal location info and locId
-    const { startDate, startTime, tourId, subTourIndex } = values;
+    const { startDate, startTime, tourId, memberIds = [] } = values;
     if (values.id) {
       //@ts-ignore
       await doEditEvent({
@@ -105,7 +105,7 @@ export const useEventFxns = () => {
         startTime,
         locBasic,
         tourId,
-        subTourIndex,
+        memberIds,
         id: values.id
       });
     } else {
@@ -115,11 +115,42 @@ export const useEventFxns = () => {
         startTime,
         locBasic,
         tourId,
-        subTourIndex
+        memberIds
       });
     }
     callback && callback();
   };
 
   return { handleEventSubmit };
+};
+
+export const useEventTimeItems = (eventId: string) => {
+  const { getEventsRef } = useFirebaseCtx();
+  const [timeItems, setTimeItems] = useState<TimeItem[]>([]);
+
+  useEffect(() => {
+    let unsubscribe;
+    const startListener = async () => {
+      if (!eventId) return;
+      const eventsRef = await getEventsRef();
+      const timeItemsRef =
+        eventsRef && eventsRef.doc(eventId).collection("timeItems");
+      unsubscribe =
+        timeItemsRef &&
+        timeItemsRef.onSnapshot(snapshot => {
+          let _timeItems: TimeItem[] = [];
+          if (!snapshot.empty) {
+            snapshot.forEach(doc => {
+              //@ts-ignore
+              _timeItems.push({ ...doc.data(), id: doc.id });
+            });
+            setTimeItems(_timeItems);
+          }
+        });
+    };
+    startListener();
+    return unsubscribe;
+  }, [eventId]);
+
+  return { timeItems };
 };

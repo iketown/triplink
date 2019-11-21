@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 //@ts-ignore
 import Timeline from "react-visjs-timeline";
 import { RouteComponentProps } from "react-router-dom";
-import moment from "moment";
+import moment, { Moment } from "moment";
 //@ts-ignore
 import elementToString from "react-element-to-jsx-string";
 import { Typography, Button } from "@material-ui/core";
@@ -12,6 +12,7 @@ import { usePeople } from "../People/usePeople";
 import ShowMe from "../../utils/ShowMe";
 
 const TimelineVis = (props: RouteComponentProps) => {
+  console.log("rendering timeline vis");
   const timelineRef = useRef();
   const { tours } = useTours();
   const { events } = useEvents("nViZR8fqTgvoSuQO6Fil");
@@ -44,7 +45,6 @@ const TimelineVis = (props: RouteComponentProps) => {
       ]);
     }
   }, [allPeople]);
-  console.log("date", date);
   const zoomMin = 1000 * 60 * 60; // one hour
   const zoomMax = 1000 * 60 * 60 * 24; // one day
 
@@ -57,7 +57,7 @@ const TimelineVis = (props: RouteComponentProps) => {
   const options = {
     width: "100%",
     // height: "300px",
-    clickToUse: true,
+    // clickToUse: true,
     stack: false,
     showMajorLabels: true,
     showCurrentTime: true,
@@ -77,19 +77,49 @@ const TimelineVis = (props: RouteComponentProps) => {
     },
     groupOrder
   };
-  const eventItems =
-    events &&
-    events.map(event => {
-      return {
-        id: event.id,
-        start: moment(event.startTime),
-        end: moment(event.startTime).add(2, "hours"),
-        content: event.locBasic.shortName,
-        group: "events",
-        type: "range",
-        style: `background-color: lightblue;`
-      };
-    });
+
+  type ChartItem = {
+    id: string | undefined;
+    start: Moment;
+    end: Moment;
+    content: string;
+    group: string;
+    type: string;
+    style: string;
+  };
+  const eventItems: ChartItem[] =
+    (events &&
+      events.map(event => {
+        return {
+          id: event.id,
+          start: moment(event.startTime),
+          end: moment(event.startTime).add(2, "hours"),
+          content: event.locBasic.shortName,
+          group: "events",
+          type: "range",
+          style: `background-color: lightblue;`
+        };
+      })) ||
+    [];
+
+  const eventPeopleItems =
+    (events &&
+      events.reduce((arr: ChartItem[], event) => {
+        event.memberIds &&
+          event.memberIds.forEach(memberId => {
+            arr.push({
+              id: `${event.id}-${memberId}`,
+              start: moment(event.startTime),
+              end: moment(event.startTime).add(2, "hours"),
+              content: event.locBasic.shortName,
+              group: memberId,
+              type: "range",
+              style: `background-color: yellow;`
+            });
+          });
+        return arr;
+      }, [])) ||
+    [];
 
   const clickHandler = (props: any) => {
     console.log("click props", props);
@@ -97,11 +127,11 @@ const TimelineVis = (props: RouteComponentProps) => {
   const dblClickHandler = (props: any) => {
     console.log("add a thing to", props.snappedTime.format());
   };
-  const snap = (date: Date, scale: string, step: number) => {
-    console.log("date, scale, step", date, scale, step);
-    return moment();
-  };
+
   // jsx
+  const items = useMemo(() => {
+    return [...eventItems, ...eventPeopleItems];
+  }, [eventItems, eventPeopleItems]);
 
   return (
     <div>
@@ -109,7 +139,7 @@ const TimelineVis = (props: RouteComponentProps) => {
       <Timeline
         ref={timelineRef}
         options={options}
-        items={eventItems}
+        items={items}
         groups={groups}
         clickHandler={clickHandler}
         doubleClickHandler={dblClickHandler}

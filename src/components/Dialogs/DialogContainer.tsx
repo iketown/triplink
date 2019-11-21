@@ -35,7 +35,6 @@ export const DialogContainer = () => {
   const { formType } = state;
   return (
     <Dialog maxWidth="md" fullWidth open={state.open} onClose={handleClose}>
-      <DialogTitle>{titles[formType]}</DialogTitle>
       <DialogContent>{contents[formType]}</DialogContent>
     </Dialog>
   );

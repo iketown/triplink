@@ -16,12 +16,15 @@ import {
   Link,
   IconButton
 } from "@material-ui/core";
+import { CheckboxProps } from "@material-ui/core/Checkbox";
+import { withStyles } from "@material-ui/core";
 import { Save, CancelOutlined } from "@material-ui/icons";
 import { usePeople, useGroup, useGroups } from "./usePeople";
 import { useFirebaseCtx } from "../Firebase/firebase.context";
 import ShowMe from "../../utils/ShowMe";
 import RotatingArrowButton from "../Cards/RotatingArrowButton";
 import ColorPicker from "../Forms/inputs/ColorPicker";
+import { colorByIndex } from "../../utils/colors";
 //
 //
 const GroupCard = ({
@@ -49,18 +52,24 @@ const GroupCard = ({
     }
     setEditingName(false);
   };
-  const handleChangeColor = (e: any, colorIndex: any) => {
-    // if (group && group.id) {
-    //   doUpdateGroup({ groupId: group.id, updateObj: { colorIndex } });
-    // }
-    console.log("colorIndex", e.target.value);
+  const handleChangeColor = (e: any) => {
+    if (group && group.id) {
+      doUpdateGroup({
+        groupId: group.id,
+        updateObj: { colorIndex: e.target.value }
+      });
+    }
   };
   const handleCancel = () => {
     setGroupName(group && group.name);
     setEditingName(false);
   };
   return (
-    <Card>
+    <Card
+      style={{
+        border: `1px solid ${colorByIndex((group && group.colorIndex) || 0)}`
+      }}
+    >
       <CardHeader
         title={
           editingName ? (
@@ -100,11 +109,17 @@ const GroupCard = ({
           )
         }
         action={
-          <RotatingArrowButton
-            expanded={expanded}
-            onClick={() => setExpanded(old => !old)}
-            direction="ccw"
-          />
+          <>
+            <ColorPicker
+              onChange={handleChangeColor}
+              value={(group && group.colorIndex) || 0}
+            />
+            <RotatingArrowButton
+              expanded={expanded}
+              onClick={() => setExpanded(old => !old)}
+              direction="ccw"
+            />
+          </>
         }
       />
       <Collapse in={expanded}>
@@ -167,3 +182,7 @@ const GroupPersonCheckBox = ({
     </FormControl>
   );
 };
+
+interface ColoredCheckboxProps extends CheckboxProps {
+  color: any;
+}

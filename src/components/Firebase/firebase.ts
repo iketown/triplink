@@ -98,38 +98,56 @@ class Firebase {
   };
 
   // EVENTS //
-  doCreateEvent = async (event: TourEvent) => {
+  getEventsRef = async () => {
     const myProfile = await this.getUserProfile();
     if (!myProfile) return null;
-    const eventRef = this.firestore.collection(
+    const eventsRef = this.firestore.collection(
       `accounts/${myProfile.currentAccount}/events`
     );
+    return eventsRef;
+  };
+  doCreateEvent = async (event: TourEvent) => {
+    const eventsRef = await this.getEventsRef();
     const startDate = moment(event.startDate).format("YYYY-MM-DD");
-    return eventRef.add({
-      ...event,
-      startDate
-    });
+    return (
+      eventsRef &&
+      eventsRef.add({
+        ...event,
+        startDate
+      })
+    );
   };
   doEditEvent = async (event: TourEvent) => {
-    const myProfile = await this.getUserProfile();
-    if (!myProfile) return null;
-    const eventRef = this.firestore
-      .collection(`accounts/${myProfile.currentAccount}/events`)
-      .doc(event.id);
+    const eventsRef = await this.getEventsRef();
     const startDate = moment(event.startDate).format("YYYY-MM-DD");
-
-    return eventRef.update({
-      ...event,
-      startDate
-    });
+    return (
+      eventsRef &&
+      eventsRef.doc(event.id).update({
+        ...event,
+        startDate
+      })
+    );
   };
-  doChangeEventSubTour = async (eventId: string, subTourIndex: number) => {
-    const myProfile = await this.getUserProfile();
-    if (!myProfile) return null;
-    const eventRef = this.firestore
-      .collection(`accounts/${myProfile.currentAccount}/events`)
-      .doc(eventId);
-    return eventRef.update({ subTourIndex });
+
+  doCreateEventTimeItem = async (eventId: string, timeItemInfo: any) => {
+    const eventsRef = await this.getEventsRef();
+    const timeItemsRef =
+      eventsRef && eventsRef.doc(eventId).collection("timeItems");
+    return timeItemsRef && timeItemsRef.add(timeItemInfo);
+  };
+  doEditEventTimeItem = async (
+    eventId: string,
+    timeItemId: string,
+    timeItemInfo: any
+  ) => {
+    const eventsRef = await this.getEventsRef();
+    const timeItemRef =
+      eventsRef &&
+      eventsRef
+        .doc(eventId)
+        .collection("timeItems")
+        .doc(timeItemId);
+    return timeItemRef && timeItemRef.update(timeItemInfo);
   };
   // TOURS //
   doCreateTour = async (name: string, startDate: Moment, endDate: Moment) => {

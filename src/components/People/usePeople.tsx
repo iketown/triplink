@@ -2,10 +2,12 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Person, Group } from "./people.types";
 import { useFirebaseCtx } from "../Firebase/firebase.context";
 import useAuth from "../Account/UserCtx";
+import { useTours } from "../Tours/useTours";
 
 export const usePeople = (tourId?: string) => {
   const [allPeople, setAllPeople] = useState<Person[]>([]);
   const [tourPeople, setTourPeople] = useState<Person[]>([]);
+  const { tours } = useTours();
   const { userProfile } = useAuth();
   const { firestore, getUserProfile } = useFirebaseCtx();
   useEffect(() => {
@@ -28,7 +30,18 @@ export const usePeople = (tourId?: string) => {
     }
   }, [tourId, userProfile]);
 
-  return { allPeople };
+  useEffect(() => {
+    if (tourId && tours && allPeople.length) {
+      const tour = tours.find(t => t.id === tourId);
+      const tourMemberIds = (tour && tour.tourMembers) || [];
+      const _tourPeople = allPeople
+        .filter(person => tourMemberIds.includes(person.id))
+        .sort((a, b) => (a.lastName < b.lastName ? -1 : 1));
+      setTourPeople(_tourPeople);
+    }
+  }, [tourId, tours, allPeople]);
+
+  return { allPeople, tourPeople };
 };
 
 export const useGroup = (groupId?: string) => {
@@ -40,26 +53,27 @@ export const useGroup = (groupId?: string) => {
 };
 
 export const useGroups = () => {
-  const [groups, setGroups] = useState<Group[]>();
+  const [groups, setGroups] = useState<Group[]>([]);
   const { userProfile } = useAuth();
   const { firestore } = useFirebaseCtx();
 
   useEffect(() => {
-    if (!userProfile) return;
-    const groupsRef = firestore.collection(
-      `accounts/${userProfile.currentAccount}/groups`
-    );
-    const unsubscribe = groupsRef.onSnapshot(snapshot => {
-      if (snapshot.empty) return;
-      const _groups: Group[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        //@ts-ignore
-        _groups.push({ ...doc.data(), id: doc.id });
+    if (userProfile) {
+      const groupsRef = firestore.collection(
+        `accounts/${userProfile.currentAccount}/groups`
+      );
+      const unsubscribe = groupsRef.onSnapshot(snapshot => {
+        if (snapshot.empty) return;
+        const _groups: Group[] = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          //@ts-ignore
+          _groups.push({ ...doc.data(), id: doc.id });
+        });
+        setGroups(_groups.sort((a, b) => (a.name < b.name ? -1 : 1)));
       });
-      setGroups(_groups.sort((a, b) => (a.name < b.name ? -1 : 1)));
-    });
-    return unsubscribe;
+      return unsubscribe;
+    }
   }, [userProfile, firestore]);
 
   return { groups };

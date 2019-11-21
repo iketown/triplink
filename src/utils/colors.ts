@@ -8,6 +8,7 @@ import {
   brown,
   grey
 } from "@material-ui/core/colors";
+import { Color } from "@material-ui/core/index";
 
 export const colors = [
   [red[800], red[400]],
@@ -19,3 +20,21 @@ export const colors = [
   [brown[800], brown[400]],
   [grey[800], grey[400]]
 ];
+
+export const rawColors = [
+  grey,
+  red,
+  green,
+  purple,
+  orange,
+  indigo,
+  brown,
+  lightBlue
+];
+
+export const colorByIndex = (
+  index: number | string,
+  darkness: keyof Color = 400
+) => {
+  return rawColors[Number(index) % rawColors.length][darkness];
+};

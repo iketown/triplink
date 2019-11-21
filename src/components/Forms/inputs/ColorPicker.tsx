@@ -1,18 +1,25 @@
 import React from "react";
 import { FormControl, InputLabel, Select, MenuItem } from "@material-ui/core";
 import { Field } from "react-final-form";
-import { colors } from "../../../utils/colors";
+import { colors, rawColors } from "../../../utils/colors";
 import styled from "styled-components";
 
 //
 //
-const ColorBox = styled.div`
-  height: '1rem',
-  width: '1rem'
-  `;
+interface ColorBoxProps {
+  background: string;
+  border: string;
+}
+const ColorBox = styled.div<ColorBoxProps>`
+  height: 1rem;
+  width: 1rem;
+  background: ${p => p.background};
+  border: 1px solid ${p => p.border};
+`;
+
 const ColorPicker = ({
-  name = "color",
-  label = "Color",
+  name,
+  label,
   onChange,
   value
 }: {
@@ -31,18 +38,21 @@ const ColorPicker = ({
 }) => {
   return (
     <FormControl>
-      <InputLabel id="demo-simple-select-label">{label}</InputLabel>
+      {label && <InputLabel id="demo-simple-select-label">{label}</InputLabel>}
       <Select
+        IconComponent={() => null}
         labelId="demo-simple-select-label"
         id="demo-simple-select"
-        value={Number(value)}
+        value={value}
         onChange={onChange}
       >
-        {colors.map((color, index) => {
-          return <MenuItem value={index}>Ten</MenuItem>;
+        {rawColors.map((color, index) => {
+          return (
+            <MenuItem key={color[100]} value={index}>
+              <ColorBox background={color[200]} border={color[900]} />
+            </MenuItem>
+          );
         })}
-        <MenuItem value={20}>Twenty</MenuItem>
-        <MenuItem value={30}>Thirty</MenuItem>
       </Select>
     </FormControl>
   );
