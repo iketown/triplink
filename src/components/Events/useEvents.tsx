@@ -124,8 +124,8 @@ export const useEventFxns = () => {
   return { handleEventSubmit };
 };
 
-export const useEventTimeItems = (eventId: string) => {
-  const { getEventsRef } = useFirebaseCtx();
+export const useEventTimeItems = (eventId?: string) => {
+  const { getEventsRef, doUpdateEventTimeItem } = useFirebaseCtx();
   const [timeItems, setTimeItems] = useState<TimeItem[]>([]);
 
   useEffect(() => {
@@ -152,5 +152,25 @@ export const useEventTimeItems = (eventId: string) => {
     return unsubscribe;
   }, [eventId]);
 
-  return { timeItems };
+  const changeTimeItemPeople = (
+    timeItemId: string,
+    people: string[],
+    adding?: boolean
+  ) => {
+    if (!eventId || !timeItemId) return null;
+    const timeItem = timeItems.find(ti => ti.id === timeItemId);
+    const currentTIP = (timeItem && timeItem.people) || [];
+    let newTIP;
+    if (adding) {
+      newTIP = Array.from(new Set([...currentTIP, ...people]));
+    } else {
+      newTIP = currentTIP.filter(personId => !people.includes(personId));
+    }
+    const timeItemInfo = {
+      people: newTIP
+    };
+    doUpdateEventTimeItem(eventId, timeItemId, timeItemInfo);
+  };
+
+  return { timeItems, changeTimeItemPeople };
 };

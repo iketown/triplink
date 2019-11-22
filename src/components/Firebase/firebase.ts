@@ -135,7 +135,38 @@ class Firebase {
       eventsRef && eventsRef.doc(eventId).collection("timeItems");
     return timeItemsRef && timeItemsRef.add(timeItemInfo);
   };
-  doEditEventTimeItem = async (
+  private getEventTimeItemRef = async (eventId: string, timeItemId: string) => {
+    const eventsRef = await this.getEventsRef();
+    const timeItemRef =
+      eventsRef &&
+      eventsRef
+        .doc(eventId)
+        .collection("timeItems")
+        .doc(timeItemId);
+    return timeItemRef;
+  };
+  doTogglePersonInEventTimeItem = async (
+    eventId: string,
+    timeItemId: string,
+    personId: string,
+    checked: boolean
+  ) => {
+    const eventTimeItemRef = await this.getEventTimeItemRef(
+      eventId,
+      timeItemId
+    );
+    eventTimeItemRef && eventTimeItemRef.update({});
+    return (
+      eventTimeItemRef &&
+      eventTimeItemRef.update({
+        people: firebase.firestore.FieldValue[
+          checked ? "arrayUnion" : "arrayRemove"
+        ](personId)
+      })
+    );
+  };
+
+  doUpdateEventTimeItem = async (
     eventId: string,
     timeItemId: string,
     timeItemInfo: any

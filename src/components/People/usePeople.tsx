@@ -6,6 +6,9 @@ import { useTours } from "../Tours/useTours";
 
 export const usePeople = (tourId?: string) => {
   const [allPeople, setAllPeople] = useState<Person[]>([]);
+  const [allPeopleObj, setAllPeopleObj] = useState<{ [id: string]: Person }>(
+    {}
+  );
   const [tourPeople, setTourPeople] = useState<Person[]>([]);
   const { tours } = useTours();
   const { userProfile } = useAuth();
@@ -25,6 +28,12 @@ export const usePeople = (tourId?: string) => {
         setAllPeople(
           _allPeople.sort((a, b) => (a.lastName < b.lastName ? -1 : 1))
         );
+        setAllPeopleObj(
+          _allPeople.reduce((obj: { [id: string]: Person }, person: Person) => {
+            obj[person.id] = person;
+            return obj;
+          }, {})
+        );
       });
       return unsubscribe;
     }
@@ -41,7 +50,7 @@ export const usePeople = (tourId?: string) => {
     }
   }, [tourId, tours, allPeople]);
 
-  return { allPeople, tourPeople };
+  return { allPeople, tourPeople, allPeopleObj };
 };
 
 export const useGroup = (groupId?: string) => {

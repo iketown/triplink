@@ -4,8 +4,9 @@ import { TravelTypes } from "../Travels/travel.types";
 
 export type EventValues = {
   startDate: string;
+  startTime: string;
   id?: string;
-  tourId?: string;
+  tourId: string;
   locBasic?: {
     address: string;
     id: string;

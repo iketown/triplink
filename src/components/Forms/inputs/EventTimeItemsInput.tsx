@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   List,
   ListItem,
@@ -7,33 +7,33 @@ import {
   Collapse,
   ListItemText,
   Typography,
-  IconButton,
-  Tooltip
+  Button
 } from "@material-ui/core";
 import { colors } from "../../../utils/colors";
 import { TourEvent, TimeItem } from "../../Events/event.types";
 import { useEventTimeItems, useEventFxns } from "../../Events/useEvents";
 import ShowMe from "../../../utils/ShowMe";
-import { FaClock } from "react-icons/fa";
 import RotatingArrowButton from "../../Cards/RotatingArrowButton";
-import { Person } from "../../People/people.types";
+import { Person, Group } from "../../People/people.types";
 //@ts-ignore
 import { Image, Transformation } from "cloudinary-react";
-import { usePeople } from "../../People/usePeople";
-
+import { usePeople, useGroups } from "../../People/usePeople";
+import { useFirebaseCtx } from "../../Firebase";
+import { useEventCtx } from "../../Events/EventCtx";
+import CircleAvatarToggle from "./CircleAvatarToggle";
 //
 //
-const EventTimeItemsInput = ({ event }: { event: TourEvent | any }) => {
-  const { timeItems } = useEventTimeItems(event.id);
+const EventTimeItemsInput = () => {
+  const { timeItems } = useEventCtx();
   return (
     <>
       <List>
-        {timeItems.map(timeItem => {
-          return <TimeItemListItem timeItem={timeItem} />;
-        })}
+        {timeItems &&
+          timeItems.map((timeItem: TimeItem) => {
+            return <TimeItemListItem timeItem={timeItem} />;
+          })}
       </List>
       <ShowMe obj={timeItems} name="timeItems" noModal />
-      <ShowMe obj={event} name="event" noModal />
     </>
   );
 };
@@ -42,6 +42,24 @@ export default EventTimeItemsInput;
 
 const TimeItemListItem = ({ timeItem }: { timeItem: TimeItem }) => {
   const [expanded, setExpanded] = useState(false);
+  const { event } = useEventCtx();
+  const { changeTimeItemPeople } = useEventTimeItems(event && event.id);
+
+  const { allIn, someIn } = useMemo((): {
+    allIn?: boolean;
+    someIn?: boolean;
+  } => {
+    const personInTimeItem = (mem: string) =>
+      timeItem.people && timeItem.people.includes(mem);
+    const allIn = event.memberIds && event.memberIds.every(personInTimeItem);
+    const someIn = event.memberIds && event.memberIds.some(personInTimeItem);
+    return { allIn, someIn };
+  }, [event.memberIds, timeItem.people]);
+
+  const handleGroupAddRemove = () => {
+    if (!timeItem.id) return null;
+    changeTimeItemPeople(timeItem.id, event.memberIds, !allIn);
+  };
   return (
     <>
       <ListItem>
@@ -50,6 +68,15 @@ const TimeItemListItem = ({ timeItem }: { timeItem: TimeItem }) => {
         </ListItemAvatar>
         <ListItemText primary={timeItem.title} />
         <ListItemSecondaryAction>
+          <Button
+            size="small"
+            style={{ marginRight: "8px" }}
+            onClick={handleGroupAddRemove}
+            variant={allIn ? "contained" : "outlined"}
+            color={allIn ? "primary" : "default"}
+          >
+            {`${allIn ? "EVERYONE" : someIn ? "SOME" : "NO ONE"}`}
+          </Button>
           <RotatingArrowButton
             direction="ccw"
             expanded={expanded}
@@ -59,48 +86,109 @@ const TimeItemListItem = ({ timeItem }: { timeItem: TimeItem }) => {
       </ListItem>
       <Collapse in={expanded}>
         <ListItem>
-          {timeItem.people && <AvatarGroup peopleIds={timeItem.people} />}
+          {timeItem.people && timeItem && timeItem.id && event && (
+            <AvatarGroupList
+              timeItemId={timeItem.id}
+              peopleOnThisTimeItem={timeItem.people}
+              peopleOnThisEvent={event.memberIds || []}
+            />
+          )}
         </ListItem>
       </Collapse>
     </>
   );
 };
 
-const AvatarGroup = ({ peopleIds }: { peopleIds: string[] }) => {
-  const { allPeople } = usePeople();
+const AvatarGroupList = ({
+  peopleOnThisTimeItem,
+  peopleOnThisEvent,
+  timeItemId
+}: {
+  peopleOnThisTimeItem: string[];
+  peopleOnThisEvent: string[];
+  timeItemId: string;
+}) => {
+  const { groups } = useGroups();
 
   return (
-    <div>
-      {peopleIds.map(personId => {
-        const person = allPeople.find(p => p.id === personId);
-        if (!person) return null;
-        return <CircleAvatarToggle person={person} />;
+    <List>
+      {groups.map(group => {
+        if (!group || !group.members) return null;
+        if (!group.members.find(memId => peopleOnThisEvent.includes(memId)))
+          return null;
+        return (
+          <GroupListItem
+            timeItemId={timeItemId}
+            key={group.id}
+            group={group}
+            memberIds={group.members.filter(id =>
+              peopleOnThisEvent.includes(id)
+            )}
+            peopleOnThisTimeItem={peopleOnThisTimeItem}
+          />
+        );
       })}
-    </div>
+    </List>
   );
 };
 
-const CircleAvatarToggle = ({
-  person,
-  onClick
+const GroupListItem = ({
+  memberIds,
+  peopleOnThisTimeItem,
+  group,
+  timeItemId
 }: {
-  person: Person;
-  onClick?: () => void;
+  memberIds: string[];
+  peopleOnThisTimeItem: string[];
+  group: Group;
+  timeItemId: string;
 }) => {
+  const { allPeopleObj } = usePeople();
+  const { doTogglePersonInEventTimeItem } = useFirebaseCtx();
+  const { event } = useEventCtx();
+  const { changeTimeItemPeople } = useEventTimeItems(event.id);
+  const wholeGroupIn =
+    group.members &&
+    group.members.every(
+      mem =>
+        peopleOnThisTimeItem.includes(mem) || !event.memberIds.includes(mem)
+    );
+
+  const handleGroupAddRemove = () => {
+    if (!group || !group.members || !group.members.length) return null;
+    console.log(
+      `${wholeGroupIn ? "removing" : "adding"} members ${group.members}`
+    );
+    changeTimeItemPeople(timeItemId, group.members, !wholeGroupIn);
+  };
+  const handleAddRemoveSingle = (personId: string, adding: boolean) => {
+    doTogglePersonInEventTimeItem(event.id, timeItemId, personId, adding);
+  };
   return (
-    <Tooltip title={person.displayName}>
-      <IconButton size="small" style={{ background: "beige" }}>
-        <Image publicId={person.avatarPublicId}>
-          <Transformation
-            width={30}
-            height={30}
-            fetchFormat="auto"
-            crop="thumb"
-            gravity="face"
-            radius="max"
-          />
-        </Image>
-      </IconButton>
-    </Tooltip>
+    <ListItem divider style={{ padding: "4px" }}>
+      <Button
+        onClick={handleGroupAddRemove}
+        variant={wholeGroupIn ? "contained" : "outlined"}
+      >
+        {group.name}
+      </Button>
+      <div style={{ width: "100%", overflow: "scroll" }}>
+        {memberIds.map(memberId => {
+          const person = allPeopleObj && allPeopleObj[memberId];
+          if (!person) return null;
+          const isOn = peopleOnThisTimeItem.includes(memberId);
+          return (
+            <CircleAvatarToggle
+              person={person}
+              key={memberId}
+              isOn={isOn}
+              onClick={() => {
+                handleAddRemoveSingle(memberId, !isOn);
+              }}
+            />
+          );
+        })}
+      </div>
+    </ListItem>
   );
 };

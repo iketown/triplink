@@ -33,6 +33,7 @@ import { useEventFxns } from "./useEvents";
 import LoadingWhiteOut from "../Dialogs/LoadingWhiteOut";
 import RotatingArrowButton from "../Cards/RotatingArrowButton";
 import EventTimeItemsInput from "../Forms/inputs/EventTimeItemsInput";
+import { EventCtxProvider } from "./EventCtx";
 //
 //
 export const EventDialog = ({
@@ -106,7 +107,12 @@ export const EventDialog = ({
                   {values.id && (
                     <Grid item xs={12}>
                       <CardBackground title="Schedule" defaultOpen={true}>
-                        <EventTimeItemsInput event={values} />
+                        <EventCtxProvider
+                          eventId={values.id}
+                          tourId={values.tourId}
+                        >
+                          <EventTimeItemsInput />
+                        </EventCtxProvider>
                       </CardBackground>
                     </Grid>
                   )}
