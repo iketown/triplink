@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, Fragment } from "react";
 import {
   CardContent,
+  CardActions,
   List,
   ListItem,
   ListItemIcon,
@@ -13,6 +14,7 @@ import {
   ListItemSecondaryAction,
   Grid
 } from "@material-ui/core";
+import RotatingArrowButton from "../Cards/RotatingArrowButton";
 import GoogMap from "../Maps/GoogMap";
 import { StarBorder, Add, ArrowDropDown } from "@material-ui/icons";
 import { useFirebaseCtx } from "../Firebase";
@@ -26,10 +28,10 @@ import { TourEvent } from "./event.types";
 import { useDialogCtx } from "../Dialogs/DialogCtx";
 
 export const TourEvents = ({ tour }: { tour: Tour }) => {
-  const { firestore } = useFirebaseCtx();
-  const { user } = useAuth();
+  const { firestore, doUpdateTour } = useFirebaseCtx();
   const { events, eventsObj } = useEvents(tour.id);
   const { dispatch } = useDialogCtx();
+
   const handleCreateEvent = () => {
     dispatch({
       type: "CREATE_EVENT",
@@ -40,6 +42,14 @@ export const TourEvents = ({ tour }: { tour: Tour }) => {
       }
     });
   };
+
+  const handleFitTourToEvents = () => {
+    const tourDates = Object.keys(eventsObj);
+    const startDate = tourDates[0];
+    const endDate = tourDates[tourDates.length - 1];
+    doUpdateTour(tour.id, { startDate, endDate });
+  };
+
   if (!events.length)
     return (
       <CardContent style={{ textAlign: "center" }}>
@@ -50,63 +60,71 @@ export const TourEvents = ({ tour }: { tour: Tour }) => {
       </CardContent>
     );
   return (
-    <CardContent>
-      <Grid container>
-        <Grid item xs={12} md={6}>
-          <List dense>
-            {Object.entries(eventsObj).map(([date, eventArr], index) => {
-              const isFirst = index === 0;
-              const isLast = index === Object.keys(eventsObj).length - 1;
-              const nextDate = Object.values(eventsObj)[index + 1];
-              const nextDateTime = nextDate ? nextDate[0].startTime : null;
-              const isGigNextDay =
-                nextDateTime &&
-                moment(eventArr[0].startTime)
-                  .endOf("day")
-                  .add(1, "day")
-                  .isSameOrAfter(nextDateTime);
-              return (
-                <Fragment key={date}>
-                  {isFirst && (
-                    <TourEventSpacerListItem
-                      tourId={tour.id}
-                      key={date + "before"}
-                      date={moment(eventArr[0].startTime).subtract(1, "day")}
-                    />
-                  )}
-                  {
-                    //@ts-ignore
-                    <TourEventListItem
-                      date={date}
-                      eventArr={eventArr}
-                      isFirst={isFirst}
-                    />
-                  }
-                  {!isLast && !isGigNextDay && nextDateTime && (
-                    <TourEventSpacerDates
-                      tourId={tour.id}
-                      key={date + "inBetween"}
-                      mustBeAfter={eventArr[0].startTime}
-                      mustBeBefore={nextDateTime}
-                    />
-                  )}
-                  {isLast && (
-                    <TourEventSpacerListItem
-                      tourId={tour.id}
-                      key={date + "after"}
-                      date={moment(eventArr[0].startTime).add(1, "day")}
-                    />
-                  )}
-                </Fragment>
-              );
-            })}
-          </List>
+    <>
+      <CardContent>
+        <Grid container>
+          <Grid item xs={12} md={6}>
+            <List dense>
+              {Object.entries(eventsObj).map(([date, eventArr], index) => {
+                const isFirst = index === 0;
+                const isLast = index === Object.keys(eventsObj).length - 1;
+                const nextDate = Object.values(eventsObj)[index + 1];
+                const nextDateTime = nextDate ? nextDate[0].startTime : null;
+                const isGigNextDay =
+                  nextDateTime &&
+                  moment(eventArr[0].startTime)
+                    .endOf("day")
+                    .add(1, "day")
+                    .isSameOrAfter(nextDateTime);
+                return (
+                  <Fragment key={date}>
+                    {isFirst && (
+                      <TourEventSpacerListItem
+                        tourId={tour.id}
+                        key={date + "before"}
+                        date={moment(eventArr[0].startTime).subtract(1, "day")}
+                      />
+                    )}
+                    {
+                      //@ts-ignore
+                      <TourEventListItem
+                        date={date}
+                        eventArr={eventArr}
+                        isFirst={isFirst}
+                      />
+                    }
+                    {!isLast && !isGigNextDay && nextDateTime && (
+                      <TourEventSpacerDates
+                        tourId={tour.id}
+                        key={date + "inBetween"}
+                        mustBeAfter={eventArr[0].startTime}
+                        mustBeBefore={nextDateTime}
+                      />
+                    )}
+                    {isLast && (
+                      <TourEventSpacerListItem
+                        tourId={tour.id}
+                        key={date + "after"}
+                        date={moment(eventArr[0].startTime).add(1, "day")}
+                      />
+                    )}
+                  </Fragment>
+                );
+              })}
+            </List>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <GoogMap
+              markerLocs={events.map(evt => evt.locBasic)}
+              polyLines={[events.map(evt => evt.locBasic)]}
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <GoogMap markerLocs={events.map(evt => evt.locBasic)} />
-        </Grid>
-      </Grid>
-    </CardContent>
+      </CardContent>
+      <CardActions>
+        <Button onClick={handleFitTourToEvents}>Fit Tour to Events</Button>
+      </CardActions>
+    </>
   );
 };
 
@@ -219,10 +237,15 @@ const TourEventSpacerDates = ({
   const [expanded, setExpanded] = useState(false);
   const arrayOfDates = useMemo(() => {
     return getArrayOfDates({
-      first: mustBeAfter,
-      last: mustBeBefore
+      first: moment(mustBeAfter)
+        .add(1, "day")
+        .format(),
+      last: moment(mustBeBefore)
+        .subtract(1, "day")
+        .format()
     });
   }, [mustBeAfter, mustBeBefore]);
+
   if (arrayOfDates.length === 1) {
     return (
       <TourEventSpacerListItem
@@ -241,12 +264,7 @@ const TourEventSpacerDates = ({
         onClick={() => setExpanded(old => !old)}
       >
         <ListItemAvatar>
-          <ArrowDropDown
-            style={{
-              transform: `rotate(${expanded ? 0 : -180}deg)`,
-              transition: "transform .5s"
-            }}
-          />
+          <RotatingArrowButton expanded={expanded} direction="cw" />
         </ListItemAvatar>
         <ListItemText
           primaryTypographyProps={{ color: "textSecondary" }}

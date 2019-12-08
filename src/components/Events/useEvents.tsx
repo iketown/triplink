@@ -2,14 +2,101 @@ import React, { useState, useEffect, useMemo } from "react";
 import useAuth from "../Account/UserCtx";
 import { useFirebaseCtx } from "../Firebase";
 import moment from "moment";
-import { TourEvent, TimeItem } from "./event.types";
+import { TourEvent, TimeItem, GeneralEvent } from "./event.types";
 import { AirportResult } from "../../apis/amadeus.types";
 import { amadeusFxns } from "../../apis/Amadeus";
 //
 //
 
+const getHourRange = (events: any[]) => {
+  let earliestHour = 24;
+  let latestHour = 0;
+  events.forEach(event => {
+    const startHour = moment(event.startDate).hour();
+    const endHour = moment(event.endDate).hour();
+    if (event.allDay) return;
+    if (startHour < earliestHour) earliestHour = startHour;
+    if (startHour > latestHour) latestHour = startHour;
+    if (endHour > latestHour) latestHour = endHour;
+    if (endHour < earliestHour) earliestHour = endHour;
+  });
+  return { earliestHour, latestHour };
+};
+
+export const useTimeRangeEvents = (after: string, before: string) => {
+  const [events, setEvents] = useState<GeneralEvent[]>([]);
+  const { userProfile } = useAuth();
+  const { firestore } = useFirebaseCtx();
+
+  useEffect(() => {
+    if (userProfile && after && before) {
+      const eventsRef = firestore
+        .collection(`/accounts/${userProfile.currentAccount}/events`)
+        .where("startDate", ">=", after)
+        .where("startDate", "<=", before);
+
+      const unsubscribe = eventsRef.onSnapshot(snapshot => {
+        console.log("updating EVENTS");
+        const _events: any = [];
+        snapshot.forEach(doc => {
+          _events.push({ ...doc.data(), id: doc.id });
+        });
+        setEvents(
+          _events.sort((a: any, b: any) => (a.startTime < b.startTime ? -1 : 1))
+        );
+      });
+      return unsubscribe;
+    }
+  }, [firestore, before, after, userProfile]);
+  return { events };
+};
+
+export const useMonthEvents = (month: string) => {
+  const [events, setEvents] = useState<GeneralEvent[]>();
+  const [hourRange, setHourRange] = useState({
+    earliestHour: 1,
+    latestHour: 24
+  });
+
+  const { userProfile } = useAuth();
+  const { firestore } = useFirebaseCtx();
+
+  useEffect(() => {
+    if (userProfile) {
+      const eventsRef = firestore
+        .collection(`/accounts/${userProfile.currentAccount}/events`)
+        .where("startDate", ">=", month)
+        .where(
+          "startDate",
+          "<=",
+          moment(month)
+            .add(1, "month")
+            .format()
+        );
+
+      const unsubscribe = eventsRef.onSnapshot(snapshot => {
+        console.log("updating EVENTS");
+        const _events: any = [];
+        snapshot.forEach(doc => {
+          _events.push({ ...doc.data(), id: doc.id });
+        });
+        setHourRange(getHourRange(_events));
+        setEvents(
+          _events.sort((a: any, b: any) => (a.startTime < b.startTime ? -1 : 1))
+        );
+      });
+      return unsubscribe;
+    }
+  }, [firestore, month, userProfile]);
+  return { events, hourRange };
+};
+
 export const useEvents = (tourId: string) => {
   const [events, setEvents] = useState<TourEvent[]>([]);
+  const [hourRange, setHourRange] = useState({
+    earliestHour: 1,
+    latestHour: 24
+  });
   const { userProfile } = useAuth();
   const { firestore } = useFirebaseCtx();
 
@@ -22,9 +109,13 @@ export const useEvents = (tourId: string) => {
       const unsubscribe = eventsRef.onSnapshot(snapshot => {
         console.log("updating EVENTS");
         const _events: any = [];
+
         snapshot.forEach(doc => {
+          const { startDate, endDate } = doc.data();
+
           _events.push({ ...doc.data(), id: doc.id });
         });
+        setHourRange(getHourRange(_events));
         setEvents(
           _events.sort((a: any, b: any) => (a.startTime < b.startTime ? -1 : 1))
         );
@@ -61,9 +152,19 @@ export const useEvents = (tourId: string) => {
 
 export const useEventFxns = () => {
   const { getAirportsNearPoint } = amadeusFxns();
-  const { doCreateEvent, doEditEvent, doCreateLocation } = useFirebaseCtx();
+  const {
+    doCreateEvent,
+    doEditEvent,
+    doCreateLocation,
+    doUpdateTour
+  } = useFirebaseCtx();
 
-  const handleEventSubmit = async (values: any, callback?: () => void) => {
+  const handleEventSubmit = async (
+    values: any,
+    callback?: () => void,
+    newTourBoundaries?: { startDate: string; endDate: string }
+  ) => {
+    console.log("new Tour Boundaries", newTourBoundaries);
     // save location
     let airportsAll = await getAirportsNearPoint(
       values.location.lat,
@@ -75,6 +176,7 @@ export const useEventFxns = () => {
       airports: (airportsAll && airportsAll.slice(0, 3)) || []
     }).catch(err => console.log("error submitting LOCATION", err));
     if (!locResponse) return { error: "some kind of error" };
+    //@ts-ignore
     const {
       id,
       lat,
@@ -118,6 +220,9 @@ export const useEventFxns = () => {
         memberIds
       });
     }
+    if (newTourBoundaries) {
+      doUpdateTour(tourId, newTourBoundaries);
+    }
     callback && callback();
   };
 
@@ -144,7 +249,12 @@ export const useEventTimeItems = (eventId?: string) => {
               //@ts-ignore
               _timeItems.push({ ...doc.data(), id: doc.id });
             });
-            setTimeItems(_timeItems);
+            setTimeItems(
+              _timeItems.sort((a: TimeItem, b: TimeItem) => {
+                if (a.startTime < b.startTime) return -1;
+                else return 1;
+              })
+            );
           }
         });
     };

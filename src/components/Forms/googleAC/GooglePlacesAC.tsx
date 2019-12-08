@@ -8,17 +8,19 @@ import { makeStyles } from "@material-ui/core/styles";
 import parse from "autosuggest-highlight/parse";
 import { throttle } from "lodash";
 import { geocodeByPlaceId } from "react-places-autocomplete";
-function loadScript(src: string, position: HTMLElement | null, id: string) {
-  if (!position) {
-    return;
-  }
+import { LinearProgress } from "@material-ui/core";
 
-  const script = document.createElement("script");
-  script.setAttribute("async", "");
-  script.setAttribute("id", id);
-  script.src = src;
-  position.appendChild(script);
-}
+// function loadScript(src: string, position: HTMLElement | null, id: string) {
+//   if (!position) {
+//     return;
+//   }
+
+//   const script = document.createElement("script");
+//   script.setAttribute("async", "");
+//   script.setAttribute("id", id);
+//   script.src = src;
+//   position.appendChild(script);
+// }
 
 const autocompleteService = { current: null };
 
@@ -29,7 +31,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface PlaceType {
+export interface PlaceType {
   place_id: string;
   description: string;
   structured_formatting: {
@@ -46,37 +48,27 @@ interface PlaceType {
 
 export default function GooglePlacesAC({
   setLocation,
-  label = "Add a location"
+  label = "Enter location",
+  submitting,
+  setSubmitting
 }: {
   setLocation?: any;
   label?: string;
+  submitting?: boolean;
+  setSubmitting?: (val: boolean) => void;
 }) {
   const classes = useStyles();
   const [inputValue, setInputValue] = React.useState("");
   const [options, setOptions] = React.useState<PlaceType[]>([]);
 
-  // const loaded = React.useRef(false);
-
-  // if (typeof window !== "undefined" && !loaded.current && !window.google) {
-  //   if (!document.querySelector("#google-maps")) {
-  //     const { REACT_APP_GOOGLE_PLACES_API_KEY } = process.env;
-  //     loadScript(
-  //       `https://maps.googleapis.com/maps/api/js?key=${REACT_APP_GOOGLE_PLACES_API_KEY}&libraries=places`,
-  //       document.querySelector("head"),
-  //       "google-maps"
-  //     );
-  //   }
-  //   loaded.current = true;
-  // }
-
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
-  const handleSelect = (e: any, loc: PlaceType) => {
-    console.log("i choose this", loc);
+  const handleSelect = async (e: any, loc: PlaceType) => {
+    setSubmitting && setSubmitting(true);
     const { place_id } = loc;
-    geocodeByPlaceId(place_id)
+    await geocodeByPlaceId(place_id)
       .then(([result]) => {
         console.log("result", result);
         const lat = result.geometry.location.lat();
@@ -111,6 +103,9 @@ export default function GooglePlacesAC({
           country,
           countryShort,
           placeId: place_id,
+          shortName: `${city || town}, ${stateShort || state || ""}${
+            countryShort !== "US" ? " " + countryShort : ""
+          }`,
           venueName: loc.structured_formatting.main_text
         });
       })
@@ -145,6 +140,7 @@ export default function GooglePlacesAC({
 
     fetch({ input: inputValue }, (results?: PlaceType[]) => {
       if (active) {
+        console.log("raw results", results);
         setOptions(results || []);
       }
     });
@@ -155,59 +151,61 @@ export default function GooglePlacesAC({
   }, [inputValue, fetch]);
 
   return (
-    <Autocomplete
-      id="google-map-demo"
-      style={{ width: 300 }}
-      getOptionLabel={option => {
-        return option.description;
-      }}
-      filterOptions={x => x}
-      onChange={handleSelect}
-      options={options}
-      autoComplete
-      includeInputInList
-      freeSolo
-      disableOpenOnFocus
-      renderInput={params => (
-        <TextField
-          {...params}
-          label={label}
-          variant="outlined"
-          fullWidth
-          onChange={handleChange}
-        />
-      )}
-      renderOption={option => {
-        const matches =
-          option.structured_formatting.main_text_matched_substrings;
-        const parts = parse(
-          option.structured_formatting.main_text,
-          matches.map((match: any) => [
-            match.offset,
-            match.offset + match.length
-          ])
-        );
-        return (
-          <Grid container alignItems="center">
-            <Grid item>
-              <LocationOnIcon className={classes.icon} />
+    <>
+      <Autocomplete
+        id="google-map-demo"
+        getOptionLabel={option => {
+          return option.description;
+        }}
+        style={{ minWidth: "11rem", width: "100%" }}
+        filterOptions={x => x}
+        onChange={handleSelect}
+        options={options}
+        autoComplete
+        includeInputInList
+        freeSolo
+        disableOpenOnFocus
+        renderInput={params => (
+          <TextField
+            {...params}
+            label={label}
+            variant="outlined"
+            fullWidth
+            onChange={handleChange}
+          />
+        )}
+        renderOption={option => {
+          const matches =
+            option.structured_formatting.main_text_matched_substrings;
+          const parts = parse(
+            option.structured_formatting.main_text,
+            matches.map((match: any) => [
+              match.offset,
+              match.offset + match.length
+            ])
+          );
+          return (
+            <Grid container alignItems="center">
+              <Grid item>
+                <LocationOnIcon className={classes.icon} />
+              </Grid>
+              <Grid item xs>
+                {parts.map((part, index) => (
+                  <span
+                    key={index}
+                    style={{ fontWeight: part.highlight ? 700 : 400 }}
+                  >
+                    {part.text}
+                  </span>
+                ))}
+                <Typography variant="body2" color="textSecondary">
+                  {option.structured_formatting.secondary_text}
+                </Typography>
+              </Grid>
             </Grid>
-            <Grid item xs>
-              {parts.map((part, index) => (
-                <span
-                  key={index}
-                  style={{ fontWeight: part.highlight ? 700 : 400 }}
-                >
-                  {part.text}
-                </span>
-              ))}
-              <Typography variant="body2" color="textSecondary">
-                {option.structured_formatting.secondary_text}
-              </Typography>
-            </Grid>
-          </Grid>
-        );
-      }}
-    />
+          );
+        }}
+      />
+    </>
   );
 }

@@ -1,7 +1,11 @@
 import React from "react";
 import { Field, FieldInputProps } from "react-final-form";
 import { TextField } from "@material-ui/core";
-import { OutlinedTextFieldProps } from "@material-ui/core/TextField";
+import {
+  OutlinedTextFieldProps,
+  TextFieldProps
+} from "@material-ui/core/TextField";
+import { OutlinedInputProps } from "@material-ui/core/OutlinedInput";
 
 interface TextInputProps {
   name: string;
@@ -9,8 +13,9 @@ interface TextInputProps {
   placeholder?: string;
   type?: string;
   extraOnChange?: (value: string) => void;
+  InputProps?: Partial<OutlinedInputProps>;
 }
-const TextInput = ({ extraOnChange, ...props }: TextInputProps) => {
+const TextInput = ({ extraOnChange, InputProps, ...props }: TextInputProps) => {
   return (
     <Field name={props.name}>
       {({ input, meta }) => {
@@ -21,6 +26,7 @@ const TextInput = ({ extraOnChange, ...props }: TextInputProps) => {
             fullWidth
             variant="outlined"
             value={input.value}
+            InputProps={InputProps}
             onChange={e => {
               input.onChange(e.target.value);
               if (extraOnChange) {

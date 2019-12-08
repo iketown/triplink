@@ -13,6 +13,9 @@ import {
   Typography
 } from "@material-ui/core";
 import moment, { Moment } from "moment";
+import { useTours, useToursTimeRange } from "./useTours";
+import ShowMe from "../../utils/ShowMe";
+import { MaterialUiPickersDate } from "@material-ui/pickers";
 
 interface TourInitialValues {
   startDate: Moment;
@@ -24,7 +27,10 @@ interface TourFormProps {
   initialValues: TourInitialValues;
 }
 const TourForm = ({ initialValues }: TourFormProps) => {
-  const { doCreateTour } = useFirebaseCtx();
+  //@ts-ignore
+  window.moment = moment;
+  const { doCreateTour, doUpdateTour } = useFirebaseCtx();
+  const { tours } = useTours();
   const [editing, setEditing] = useState(!!initialValues.id);
   const toggleEditing = () => setEditing(old => !old);
   const handleSubmit = async ({
@@ -36,11 +42,21 @@ const TourForm = ({ initialValues }: TourFormProps) => {
     startDate: Moment;
     endDate: Moment;
   }) => {
+    if (initialValues.id) {
+      // update
+      console.log("OK, updating");
+      doUpdateTour(initialValues.id, {
+        name,
+        startDate: startDate.format("YYYY-MM-DD"),
+        endDate: endDate.format("YYYY-MM-DD")
+      });
+    }
     if (!initialValues.id) {
       const response = await doCreateTour(name, startDate, endDate);
       console.log("response", response);
     }
   };
+  const { shouldDisableStartdate } = useToursTimeRange();
 
   return (
     <Form onSubmit={handleSubmit} initialValues={initialValues}>
@@ -53,7 +69,11 @@ const TourForm = ({ initialValues }: TourFormProps) => {
                   <TextInput name="name" label="Tour Name" />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <DateInput name="startDate" label="Start Date (est)" />
+                  <DateInput
+                    shouldDisableDate={shouldDisableStartdate}
+                    name="startDate"
+                    label="Start Date (est)"
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <DateInput name="endDate" label="End Date (est)" />
@@ -64,6 +84,7 @@ const TourForm = ({ initialValues }: TourFormProps) => {
               <Button variant="contained" color="primary" type="submit">
                 Save
               </Button>
+              <ShowMe obj={tours} name="tours"></ShowMe>
             </CardActions>
           </form>
         );

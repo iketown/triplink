@@ -7,33 +7,21 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
   CardActions,
   Typography,
   Collapse
 } from "@material-ui/core";
-import GoogPlacesAC from "../Forms/googleAC/GooglePlacesAC";
-import SelectInput from "../Forms/inputs/SelectInput";
 import GoogMap from "../Maps/GoogMap";
-import PeopleInput from "../Forms/inputs/PeopleInput";
 import EventLocInput from "../Forms/inputs/EventLocInput";
-import {
-  getShortNameFromLoc,
-  getTimeZoneFromLatLng
-} from "../../utils/locationFxns";
-import TextInput from "../Forms/inputs/TextInput";
-import { useFirebaseCtx } from "../Firebase";
 import moment from "moment-timezone";
-import TimeInput from "../Forms/inputs/TimeInput";
-import { LocBasicType, LocationType } from "../Locations/location.types";
 import { DateTimeInput } from "../Forms/inputs/DateTimeInput";
-import { amadeusFxns } from "../../apis/Amadeus";
-import { AirportResult } from "../../apis/amadeus.types";
-import { useEventFxns } from "./useEvents";
+import { useToursTimeRange } from "../Tours/useTours";
+import { useEventFxns, useEvents } from "./useEvents";
 import LoadingWhiteOut from "../Dialogs/LoadingWhiteOut";
 import RotatingArrowButton from "../Cards/RotatingArrowButton";
-import EventTimeItemsInput from "../Forms/inputs/EventTimeItemsInput";
+import EventTimeItemsInput from "../Forms/inputs/EventTimeItems/EventTimeItemsInput";
 import { EventCtxProvider } from "./EventCtx";
+
 //
 //
 export const EventDialog = ({
@@ -43,13 +31,33 @@ export const EventDialog = ({
   initialValues: EventValues;
   handleClose: () => void;
 }) => {
-  const { doCreateLocation, doCreateEvent, doEditEvent } = useFirebaseCtx();
-  const { getAirportsNearPoint } = amadeusFxns();
   const { handleEventSubmit } = useEventFxns();
+  const {
+    toursAfterDate,
+    setEarliestEndDate,
+    tourDatesObj,
+    earliestDate
+  } = useToursTimeRange();
+
   const [submitting, setSubmitting] = useState(false);
+  const { eventsObj } = useEvents(initialValues.tourId);
+
   const handleSubmit = async (values: any) => {
+    const tourDates = Object.keys(eventsObj);
+    let newTourBoundaries;
+    const firstTourDate = tourDates[0];
+    const lastTourDate = tourDates[tourDates.length - 1];
+    if (values.startTime < firstTourDate || values.startTime > lastTourDate) {
+      // expand tour dates
+      newTourBoundaries = {
+        startDate:
+          values.startTime < firstTourDate ? values.startTime : firstTourDate,
+        endDate:
+          values.startTime > lastTourDate ? values.startTime : lastTourDate
+      };
+    }
     setSubmitting(true);
-    await handleEventSubmit(values, handleClose);
+    await handleEventSubmit(values, handleClose, newTourBoundaries);
     setSubmitting(false);
   };
 
@@ -79,13 +87,6 @@ export const EventDialog = ({
                         }
                       />
                     </CardBackground>
-                  </Grid>
-                  <Grid item xs={12}>
-                    {values.tourId && (
-                      <CardBackground noContentWrap title="Who ?">
-                        <PeopleInput name="memberIds" tourId={values.tourId} />
-                      </CardBackground>
-                    )}
                   </Grid>
                 </Grid>
                 {/* 👈👈 LEFT SIDE 👈👈 */}

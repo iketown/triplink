@@ -30,7 +30,7 @@ export type EventValues = {
 };
 const initialState = {
   open: false,
-  formType: "googPlaces",
+  formType: "event",
   initialValues: {
     date: "2019-11-10",
     tourId: "D11r5RTlh1OGWY7yPLtV"

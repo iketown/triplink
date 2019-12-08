@@ -17,7 +17,7 @@ const FlexPolyline = (props: PolyLinePropsExtended) => {
           {
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
-              scale: 3,
+              scale: 2,
               strokeColor: "green"
             },
             offset: "0%"
@@ -25,10 +25,26 @@ const FlexPolyline = (props: PolyLinePropsExtended) => {
           {
             icon: {
               path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-              scale: 2,
+              // scale: 2,
               strokeColor: "red"
             },
             offset: "100%"
+          },
+          {
+            icon: {
+              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+              // scale: 2,
+              strokeColor: "red"
+            },
+            offset: "33%"
+          },
+          {
+            icon: {
+              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+              // scale: 2,
+              strokeColor: "red"
+            },
+            offset: "66%"
           }
         ]
       }}

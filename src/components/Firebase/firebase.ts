@@ -3,10 +3,10 @@ import firebase from "firebase";
 import { FirebaseDatabase } from "@firebase/database-types";
 import "firebase/auth";
 import { firebaseConfigDEV, firebaseConfig } from "./config";
-import moment, { Moment } from "moment";
+import moment, { Moment } from "moment-timezone";
 import { Airport, AirportResult } from "../../apis/amadeus.types";
 import { LocationType } from "../Locations/location.types";
-import { TourEvent } from "../Events/event.types";
+import { TourEvent, GeneralEvent } from "../Events/event.types";
 import { Person } from "../People/people.types";
 import { amadeusFxns } from "../../apis/Amadeus";
 import { removeMissing } from "../../utils/general";
@@ -59,12 +59,36 @@ class Firebase {
     return profileRef.update(updateObj);
   };
   // LOCATIONS //
-  doCreateLocation = async (loc: LocationType) => {
-    console.log("creating LOC", loc);
+  doCreateAirport = async (loc: LocationType) => {
     const myProfile = await this.getUserProfile();
     if (!myProfile) {
       console.log("missing profile");
-      return null;
+      return;
+    }
+    const locRef = this.firestore.collection(
+      `accounts/${myProfile.currentAccount}/locations`
+    );
+    const apId = `airport_${loc.iataCode}`;
+    await locRef
+      .doc(apId)
+      .set(loc, { merge: true })
+      .catch(err => {
+        console.log("error saving airport", err);
+      });
+    return (
+      locRef
+        .doc(apId)
+        .get()
+        //@ts-ignore
+        .then((doc): LocationType => ({ ...doc.data(), id: doc.id }))
+    );
+  };
+  doCreateLocation = async (loc: LocationType) => {
+    if (loc.locType === "airport") return this.doCreateAirport(loc);
+    const myProfile = await this.getUserProfile();
+    if (!myProfile) {
+      console.log("missing profile");
+      return;
     }
     const locRef = this.firestore.collection(
       `accounts/${myProfile.currentAccount}/locations`
@@ -82,22 +106,34 @@ class Firebase {
         });
         return _foundLocs;
       });
+
     if (previousLocs) {
+      console.log("reusing prev LOC", loc);
       return previousLocs[0];
     } else {
+      console.log("creating NEW LOC", loc);
       return locRef
         .add(loc)
         .then(doc => doc.get())
-        .then((doc): LocationType | undefined => {
-          if (doc.exists) {
+        .then(
+          (doc): LocationType => {
             //@ts-ignore
             return { ...doc.data(), id: doc.id };
           }
-        });
+        );
     }
   };
 
   // EVENTS //
+  formatEventDates = (event: GeneralEvent) => {
+    if (event.startDate) {
+      event.startDate = moment(event.startDate).format();
+    }
+    if (event.endDate) {
+      event.endDate = moment(event.endDate).format();
+    }
+    return event;
+  };
   getEventsRef = async () => {
     const myProfile = await this.getUserProfile();
     if (!myProfile) return null;
@@ -106,27 +142,49 @@ class Firebase {
     );
     return eventsRef;
   };
-  doCreateEvent = async (event: TourEvent) => {
+  doCreateEvent = async (event: GeneralEvent, expandTour?: boolean) => {
     const eventsRef = await this.getEventsRef();
-    const startDate = moment(event.startDate).format("YYYY-MM-DD");
+    const formattedEvent = this.formatEventDates(event);
+    // expand tour?
+    if (event.startLoc) {
+      const startLoc = await this.doCreateLocation(event.startLoc);
+      console.log("startLoc populated", startLoc);
+      //@ts-ignore
+      if (startLoc) event.startLoc = startLoc;
+    }
+    if (event.endLoc) {
+      const endLoc = await this.doCreateLocation(event.endLoc);
+      console.log("endLoc populated", endLoc);
+      //@ts-ignore
+      if (endLoc) event.endLoc = endLoc;
+    }
     return (
       eventsRef &&
       eventsRef.add({
-        ...event,
-        startDate
+        ...formattedEvent
       })
     );
   };
-  doEditEvent = async (event: TourEvent) => {
+
+  doEditEvent = async (event: GeneralEvent, expandTour?: boolean) => {
     const eventsRef = await this.getEventsRef();
-    const startDate = moment(event.startDate).format("YYYY-MM-DD");
+    const formattedEvent = this.formatEventDates(event);
+    // expand tour??
+    console.log("event in doEditEvent", event);
+    if (event.startLoc) {
+      const startLoc = await this.doCreateLocation(event.startLoc);
+      console.log("startLoc populated", startLoc);
+    }
     return (
       eventsRef &&
       eventsRef.doc(event.id).update({
-        ...event,
-        startDate
+        ...formattedEvent
       })
     );
+  };
+  doDeleteEvent = async (eventId: string) => {
+    const eventsRef = await this.getEventsRef();
+    return eventsRef && eventsRef.doc(eventId).delete();
   };
 
   doCreateEventTimeItem = async (eventId: string, timeItemInfo: any) => {
@@ -180,7 +238,26 @@ class Firebase {
         .doc(timeItemId);
     return timeItemRef && timeItemRef.update(timeItemInfo);
   };
+
   // TOURS //
+  private expandTourDates = async (tourId: string, date: string) => {
+    const tourRef = await this.getTourRef(tourId);
+    if (tourRef) {
+      const tour = tourRef.get().then(doc => doc.data());
+      if (tour) {
+        console.log("tour", tour);
+      }
+    }
+  };
+  doUpdateTour = async (
+    tourId: string,
+    updateObj: { name?: string; startDate?: string; endDate?: string }
+  ) => {
+    const tourRef = await this.getTourRef(tourId);
+    if (tourRef) {
+      tourRef.update(updateObj);
+    }
+  };
   doCreateTour = async (name: string, startDate: Moment, endDate: Moment) => {
     if (!this.auth.currentUser) {
       console.log("NO USER!");
@@ -202,7 +279,7 @@ class Firebase {
     return response;
   };
 
-  private getTourRef = async (tourId: string) => {
+  getTourRef = async (tourId: string) => {
     const myProfile = await this.getUserProfile();
     if (!myProfile) return null;
     const tourRef = this.firestore.doc(

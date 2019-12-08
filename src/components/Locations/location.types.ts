@@ -5,9 +5,9 @@ export type LocationType = {
   lat: number;
   lng: number;
   address: string;
-  timeZoneId?: string;
   venueName: string;
   shortName: string;
+  timeZoneId?: string;
   city?: string;
   town?: string;
   state?: string;
@@ -16,6 +16,8 @@ export type LocationType = {
   countryShort?: string;
   id?: string;
   airports?: AirportResult[];
+  locType?: string;
+  iataCode?: string;
 };
 
 export type LocBasicType = {
@@ -28,6 +30,8 @@ export type LocBasicType = {
   timeZoneId?: string;
   id?: string;
   airport?: AirportResult;
+  locType?: string;
+  iataCode?: string;
 };
 
 export interface LocPoint {

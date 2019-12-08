@@ -5,6 +5,7 @@ import { TimeItem, TourEvent } from "./event.types";
 type EventCtxType = {
   event: TourEvent;
   timeItems: TimeItem[];
+  tourId: string;
 };
 //@ts-ignore
 const EventCtx = createContext<EventCtxType>();
@@ -25,7 +26,12 @@ export const EventCtxProvider = ({
   const event = useMemo(() => {
     return events.find(e => e.id && e.id === eventId);
   }, [eventId, events]);
-  return <EventCtx.Provider value={{ event, timeItems }} children={children} />;
+  return (
+    <EventCtx.Provider
+      value={{ event, timeItems, tourId }}
+      children={children}
+    />
+  );
 };
 
 export const useEventCtx = () => {
@@ -33,6 +39,6 @@ export const useEventCtx = () => {
   if (!ctx)
     throw new Error("useEventCtx must be a descendant of EventCtxProvider");
   //@ts-ignore
-  const { event, timeItems } = ctx;
-  return { event, timeItems };
+  const { event, timeItems, tourId } = ctx;
+  return { event, timeItems, tourId };
 };

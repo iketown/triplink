@@ -11,12 +11,19 @@ import {
   IconButton,
   ListSubheader
 } from "@material-ui/core";
+import usAirports from "../../constants/usAirports";
 import styled from "styled-components";
 import { ArrowDropDown } from "@material-ui/icons";
 import { AirportResult } from "../../apis/amadeus.types";
 import ShowMe from "../../utils/ShowMe";
 import { amadeusFxns } from "../../apis/Amadeus";
+import { PlaceType } from "../Forms/googleAC/GooglePlacesAC";
+import { useGoogleAirport } from "./useGoogAirports";
+import { airportResultToLoc } from "../../utils/locationFxns";
+import { LocBasicType } from "../Locations/location.types";
 
+//
+//
 const AirportACDownshift = ({
   onSelect,
   closeAirports,
@@ -26,7 +33,7 @@ const AirportACDownshift = ({
   label,
   initialValue
 }: {
-  onSelect: (ap: AirportResult) => void;
+  onSelect: (ap: LocBasicType) => void;
   closeAirports?: (AirportResult | undefined)[];
   arriving?: boolean;
   meta?: any;
@@ -35,6 +42,9 @@ const AirportACDownshift = ({
   initialValue?: string;
 }) => {
   const [airports, setAirports] = useState<(AirportResult | undefined)[]>([]);
+  const [savedAirportsResults, setSavedAirportResults] = useState<
+    AirportResult[]
+  >([]);
   const [searchString, setSearchString] = useState(initialValue);
 
   const { getAirportsByKeyword } = amadeusFxns();
@@ -63,6 +73,45 @@ const AirportACDownshift = ({
       { maxWait: 500 }
     )
   );
+  const searchLocal = (): boolean => {
+    // get exact match airports "BOS" "MSP"
+    if (searchString && typeof searchString === "string") {
+      const codes: string[] = [];
+      const searchStringLow = searchString.toLowerCase();
+      //@ts-ignore
+      const exactMatch = usAirports.airports[searchString.toUpperCase()];
+      if (exactMatch) codes.push(exactMatch.iataCode);
+      // get cities
+      Object.entries(usAirports.cities).forEach(([city, code]) => {
+        if (city.includes(searchStringLow)) {
+          //@ts-ignore
+          codes.push(code);
+        }
+      });
+      // get states
+      Object.entries(usAirports.states).forEach(([state, apCodes]) => {
+        if (state.includes(searchStringLow)) {
+          //@ts-ignore
+          codes.concat(apCodes);
+        }
+      });
+      Object.entries(usAirports.names).forEach(([name, code]) => {
+        if (name.includes(searchStringLow)) {
+          //@ts-ignore
+          codes.push(code);
+        }
+      });
+      const filteredCodes = codes.filter(
+        (code, i) => codes.findIndex(_code => _code === code) === i
+      );
+      setSavedAirportResults(
+        //@ts-ignore
+        filteredCodes.map(code => usAirports.airports[code])
+      );
+      setAirports([]);
+      return !!filteredCodes.length;
+    } else return true;
+  };
   useEffect(() => {
     let active = true;
     if (
@@ -71,12 +120,26 @@ const AirportACDownshift = ({
       searchString.length < 10 &&
       searchString !== initialValue
     ) {
-      dbApCall.current(searchString, active);
+      // first check local
+      if (!searchLocal()) {
+        dbApCall.current(searchString, active);
+      }
     }
     return () => {
       active = false;
     };
   }, [searchString, initialAirports]);
+  const handleSelect = async (ap: any) => {
+    console.log("airport", ap);
+    let formatAP;
+    if (!ap.locType) {
+      formatAP = ap;
+    } else {
+      formatAP = await airportResultToLoc(ap);
+      formatAP.locType = "airport";
+    }
+    onSelect(formatAP);
+  };
   return (
     <>
       <Downshift
@@ -84,7 +147,7 @@ const AirportACDownshift = ({
         itemToString={(item: AirportResult) =>
           item ? `${item.iataCode} - ${item.detailedName}` : ""
         }
-        onSelect={onSelect}
+        onSelect={handleSelect}
         // initialIsOpen={true}
       >
         {({
@@ -100,7 +163,7 @@ const AirportACDownshift = ({
           getToggleButtonProps
         }) => {
           return (
-            <Grid container spacing={2} {...getRootProps()}>
+            <Grid container {...getRootProps()}>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -128,6 +191,16 @@ const AirportACDownshift = ({
                     overflow: "scroll"
                   }}
                 >
+                  {savedAirportsResults.map((ap, index) => {
+                    if (!ap) return null;
+                    return (
+                      <AirportListItem
+                        disabled={disableIata === ap.iataCode}
+                        key={ap.iataCode}
+                        {...{ ap, index, highlightedIndex, getItemProps }}
+                      />
+                    );
+                  })}
                   {airports.map((ap, index) => {
                     if (!ap) return null;
                     return (
@@ -185,7 +258,7 @@ const AirportListItem = ({
   getItemProps,
   highlightedIndex,
   disabled
-}: IAirportListItem) => {
+}: any) => {
   if (disabled) return null;
   return (
     <ListItem
@@ -206,8 +279,10 @@ const AirportListItem = ({
       </ListItemAvatar>
       <ListItemText
         style={{ margin: 0 }}
-        primary={ap.name}
-        secondary={ap.detailedName}
+        primary={ap.name || ap.shortName}
+        primaryTypographyProps={{ noWrap: true }}
+        secondaryTypographyProps={{ noWrap: true }}
+        secondary={ap.detailedName || ap.venueName}
       />
     </ListItem>
   );

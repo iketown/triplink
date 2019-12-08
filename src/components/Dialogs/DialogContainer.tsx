@@ -1,6 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogTitle } from "@material-ui/core";
 import EventDialog from "../Events/EventDialog";
+import EventDialogNew from "../Events/EventDialogNew";
 import TravelDialog from "../Travels/TravelDialog";
 import HotelDialog from "../Hotels/HotelDialog";
 import { useDialogCtx } from "./DialogCtx";
@@ -14,7 +15,7 @@ export const DialogContainer = () => {
   const { initialValues } = state;
   const contents = {
     event: (
-      <EventDialog initialValues={initialValues} handleClose={handleClose} />
+      <EventDialogNew initialValues={initialValues} handleClose={handleClose} />
     ),
     travel: (
       <TravelDialog initialValues={initialValues} handleClose={handleClose} />

@@ -5,11 +5,13 @@ import moment from "moment-timezone";
 export const DateTimeInput = ({
   name,
   label,
-  timeZoneId
+  timeZoneId,
+  onSelect
 }: {
   name: string;
   label: string;
   timeZoneId?: string;
+  onSelect?: () => void;
 }) => {
   return (
     <Field name={name}>
@@ -22,6 +24,7 @@ export const DateTimeInput = ({
           } else {
             input.onChange(value);
           }
+          onSelect && onSelect();
         };
         const value = timeZoneId
           ? moment(input.value).tz(timeZoneId)

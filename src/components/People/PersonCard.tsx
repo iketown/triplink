@@ -37,7 +37,7 @@ const PersonCard = ({ person }: { person: Person }) => {
   const cardInfo = () => (
     <>
       <CardHeader
-        avatar={<CloudAvatar width={30} publicId={avatarPublicId} />}
+        avatar={<CloudAvatar publicId={avatarPublicId} />}
         action={
           <>
             <Tooltip placement="top" title="Edit Person info">

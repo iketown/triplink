@@ -1,4 +1,5 @@
 import { LocBasicType } from "../Locations/location.types";
+import { eventTypes } from "../Scheduler/eventFormHelpers";
 
 export type TourEvent = {
   id?: string;
@@ -7,6 +8,7 @@ export type TourEvent = {
   endDate?: string;
   tourId: string;
   locBasic: LocBasicType;
+  startLoc?: LocBasicType;
   memberIds?: string[];
 };
 
@@ -16,4 +18,27 @@ export type TimeItem = {
   id?: string;
   endTime?: string;
   people?: string[];
+};
+
+export enum EventTypes {
+  show = "show",
+  generic = "generic",
+  flight = "flight",
+  hotel = "hotel",
+  ground = "ground"
+}
+
+export type GeneralEvent = {
+  eventType: EventTypes;
+  id?: string;
+  startDate: string;
+  startTime: string;
+  allDay?: boolean;
+  endDate?: string;
+  tourId: string;
+  memberIds?: string[];
+  locBasic?: LocBasicType;
+  startLoc: LocBasicType;
+  endLoc?: LocBasicType; // if travel
+  itineraries?: string[];
 };

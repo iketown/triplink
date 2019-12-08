@@ -3,6 +3,7 @@ import { Avatar } from "@material-ui/core";
 //@ts-ignore
 import { Transformation, Image } from "cloudinary-react";
 import { Cloudinary } from "cloudinary-core";
+import { FaUser } from "react-icons/fa";
 
 const cl = new Cloudinary({
   cloud_name: "iketown",
@@ -15,15 +16,23 @@ interface ICloudAvatar {
   width?: number;
 }
 
-const CloudAvatar = ({ src, width = 60, publicId }: ICloudAvatar) => {
-  console.log("publicID", publicId);
+const CloudAvatar = ({ src, width = 40, publicId }: ICloudAvatar) => {
   return (
-    // <Avatar>
-    <Image cloudName="iketown" publicId={publicId} width={width}>
-      <Transformation width={100} height={100} gravity="faces" crop="thumb" />
-      {/* <Transformation quality="auto" fetchFormat="auto" /> */}
-    </Image>
-    // </Avatar>
+    <Avatar>
+      {publicId ? (
+        <Image cloudName="iketown" publicId={publicId} width={width}>
+          <Transformation
+            width={width}
+            height={width}
+            gravity="faces"
+            crop="thumb"
+          />
+          <Transformation quality="auto" fetchFormat="auto" />
+        </Image>
+      ) : (
+        <FaUser />
+      )}
+    </Avatar>
   );
 };
 

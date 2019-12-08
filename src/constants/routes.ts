@@ -24,7 +24,8 @@ import { RouteComponentProps } from "react-router";
 import { FaSun } from "react-icons/fa";
 import moment from "moment";
 import Timeline from "../components/Timeline/TimelineVis";
-
+import TourSchedule from "../components/Tours/TourSchedule";
+import FlightGrid from "../components/Scheduler/FlightGrid";
 type Route = {
   name: string;
   route: string;
@@ -45,7 +46,9 @@ export const routes = {
   travel: "/travel",
   people: "/people",
   day: "/day/:date",
-  timeline: "/timeline/:date"
+  timeline: "/timeline/:date",
+  calendar: "/calendar",
+  grid: "/grid"
 };
 
 export const signedOutRoutes: Route[] = [
@@ -76,23 +79,30 @@ export const signedInRoutes: Route[] = [
 ];
 
 export const appRoutes: Route[] = [
+  {
+    name: "Calendar",
+    route: routes.calendar,
+    Icon: Star,
+    component: TourSchedule
+  },
   { name: "Tours", route: routes.tours, Icon: Star, component: ToursPage },
   { name: "Travel", route: routes.travel, Icon: Map, component: TravelsPage },
   { name: "Events", route: routes.events, Icon: Star, component: EventsPage },
   { name: "People", route: routes.people, Icon: People, component: PeoplePage },
-  {
-    name: "Day Sheet",
-    route: routes.day,
-    linkRoute: `/day/${moment().format("YYYY-MM-DD")}`,
-    Icon: FaSun,
-    component: Day,
-    exact: true
-  },
-  {
-    name: "Timeline",
-    route: routes.timeline,
-    linkRoute: `/timeline/${moment().format("YYYY-MM-DD")}`,
-    Icon: FaSun,
-    component: Timeline
-  }
+  { name: "Grid", route: routes.grid, Icon: Star, component: FlightGrid }
+  // {
+  //   name: "Day Sheet",
+  //   route: routes.day,
+  //   linkRoute: `/day/${moment().format("YYYY-MM-DD")}`,
+  //   Icon: FaSun,
+  //   component: Day,
+  //   exact: true
+  // },
+  // {
+  //   name: "Timeline",
+  //   route: routes.timeline,
+  //   linkRoute: `/timeline/${moment().format("YYYY-MM-DD")}`,
+  //   Icon: FaSun,
+  //   component: Timeline
+  // }
 ];

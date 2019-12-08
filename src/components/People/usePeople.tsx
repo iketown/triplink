@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Person, Group } from "./people.types";
 import { useFirebaseCtx } from "../Firebase/firebase.context";
 import useAuth from "../Account/UserCtx";
-import { useTours } from "../Tours/useTours";
+import { useTours, useTour } from "../Tours/useTours";
 
 export const usePeople = (tourId?: string) => {
   const [allPeople, setAllPeople] = useState<Person[]>([]);
-  const [allPeopleObj, setAllPeopleObj] = useState<{ [id: string]: Person }>(
-    {}
-  );
+  const [allPeopleObj, setAllPeopleObj] = useState<{ [id: string]: Person }>();
   const [tourPeople, setTourPeople] = useState<Person[]>([]);
   const { tours } = useTours();
   const { userProfile } = useAuth();
   const { firestore, getUserProfile } = useFirebaseCtx();
+
   useEffect(() => {
     if (userProfile) {
       const peopleRef = firestore.collection(
@@ -58,7 +57,87 @@ export const useGroup = (groupId?: string) => {
   const group = useMemo(() => {
     return groups && groups.find(grp => grp.id === groupId);
   }, [groups]);
+
   return { group };
+};
+
+export const useGroupSubset = (tourId: string) => {
+  const { tourPeople, allPeopleObj } = usePeople(tourId);
+  const { tour } = useTour(tourId);
+  const { groups } = useGroups();
+
+  const getShortSubsetText = (subsetPeopleIds: string[]) => {
+    if (!subsetPeopleIds.length) return "no people";
+    let returnString = "";
+
+    type GroupPeopleEntry = {
+      [groupId: string]: { inSS: string[]; outSS: string[]; group: Group };
+    };
+    const onThisTourFilter = (id: string) =>
+      tour && tour.tourMembers.includes(id);
+    const groupPeopleObj = groups.reduce<GroupPeopleEntry>((obj, group) => {
+      if (!group.id) return obj;
+      const inSS = // in SubSet
+        (group.members &&
+          group.members
+            .filter(onThisTourFilter)
+            .filter(id => subsetPeopleIds.includes(id))) ||
+        [];
+      const outSS = // not in SubSet
+        (group.members &&
+          group.members
+            .filter(onThisTourFilter)
+            .filter(id => !subsetPeopleIds.includes(id))) ||
+        [];
+      obj[group.id] = { inSS, outSS, group };
+      return obj;
+    }, {});
+    Object.entries(groupPeopleObj)
+      .sort((a, b) => {
+        return a[1].outSS.length - b[1].outSS.length;
+      })
+      .forEach(([groupId, { inSS, outSS, group }]) => {
+        if (!outSS.length && !inSS.length) {
+          // noone in this group at all
+          console.log("empty group?", group.name);
+          return;
+        }
+        if (!inSS.length) return;
+        if (!outSS.length) {
+          // this whole group is IN
+          returnString += `${group.name.toUpperCase()} `;
+          return;
+        }
+        if (inSS.length <= outSS.length) {
+          // individuals who are IN
+          returnString += inSS
+            .map(id => {
+              const person = allPeopleObj && allPeopleObj[id];
+              return person ? `${person.displayName} ` : "";
+            })
+            .join("");
+          return;
+        }
+        returnString += `(${group.name.toUpperCase()} no `;
+        returnString += outSS
+          .map(id => {
+            const person = allPeopleObj && allPeopleObj[id];
+            console.log(
+              "single missing person",
+              person && person.displayName,
+              inSS,
+              outSS
+            );
+            return person ? `${person.displayName} ` : "";
+          })
+          .join("");
+        returnString += ") ";
+      });
+
+    return returnString;
+  };
+
+  return { getShortSubsetText };
 };
 
 export const useGroups = () => {

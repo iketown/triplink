@@ -13,13 +13,22 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions
+  CardActions,
+  LinearProgress
 } from "@material-ui/core";
 //
 //
-const EventLocInput = ({ location }: { location?: LocationType }) => {
-  console.log("event loc input locatino", location);
+const EventLocInput = ({
+  location,
+  onSelect,
+  label
+}: {
+  location?: LocationType;
+  onSelect?: () => void;
+  label?: string;
+}) => {
   const [editing, setEditing] = useState(!location);
+  const [submitting, setSubmitting] = useState(false);
   const { input: startTimeInput } = useField("startTime");
   const { input: startDateInput } = useField("startDate");
   const locContent = <AddressDisplay location={location} />;
@@ -43,10 +52,15 @@ const EventLocInput = ({ location }: { location?: LocationType }) => {
           startTimeInput.onChange(formStartTime);
           setEditing(false);
           input.onChange(loc);
+          onSelect && onSelect();
         };
         return (
-          <div style={{ marginBottom: "10px" }}>
-            <GoogPlacesAC setLocation={handleChange} />
+          <div style={{ marginBottom: "10px", width: "100%" }}>
+            <GoogPlacesAC
+              {...{ submitting, setSubmitting }}
+              setLocation={handleChange}
+              label={label}
+            />
           </div>
         );
       }}
@@ -54,12 +68,17 @@ const EventLocInput = ({ location }: { location?: LocationType }) => {
   );
 
   return (
-    <CardContent style={{ display: "flex", justifyContent: "space-between" }}>
-      {editing ? editingContent : locContent}
-      <Button onClick={() => setEditing(old => !old)}>
-        {editing ? "cancel" : "change"}
-      </Button>
-    </CardContent>
+    <>
+      {submitting && <LinearProgress />}
+      <CardContent style={{ display: "flex", justifyContent: "space-between" }}>
+        {editing ? editingContent : locContent}
+        {location && (
+          <Button onClick={() => setEditing(old => !old)}>
+            {editing ? "cancel" : "change"}
+          </Button>
+        )}
+      </CardContent>
+    </>
   );
 };
 

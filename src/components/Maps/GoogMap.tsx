@@ -12,20 +12,22 @@ import FlexMarker from "./FlexMarker";
 import FlexPolyline from "./FlexPolyline";
 // docs -> https://react-google-maps-api-docs.netlify.com/
 
-const vegas = { lat: 36.1688268, lng: -115.15180859999998 };
-const minn = { lat: 44.632468, lng: -92.649891 };
-
 const GoogMap = ({
   markerLocs = [],
   boundsPoints = [],
-  polyLines
+  polyLines,
+  initialZoom
 }: {
   boundsPoints?: { lat: number; lng: number }[];
   markerLocs?: { lat: number; lng: number }[];
   polyLines?: { lat: number; lng: number }[][];
+  initialZoom?: number;
 }) => {
   return (
-    <GoogMapContainer points={[...markerLocs, ...boundsPoints]}>
+    <GoogMapContainer
+      points={[...markerLocs, ...boundsPoints]}
+      initialZoom={initialZoom}
+    >
       {markerLocs &&
         markerLocs
           // remove duplicates
@@ -41,7 +43,7 @@ const GoogMap = ({
 
       {polyLines &&
         polyLines.map(path => {
-          return <FlexPolyline path={path} />;
+          return <FlexPolyline key={JSON.stringify(path)} path={path} />;
         })}
     </GoogMapContainer>
   );
@@ -49,10 +51,12 @@ const GoogMap = ({
 
 const GoogMapContainer = ({
   children,
-  points
+  points,
+  initialZoom
 }: {
   children?: any;
   points: { lat: number; lng: number }[];
+  initialZoom?: number;
 }) => {
   // const { isLoaded, loadError } = useLoadScript({
   //   googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAP_API_KEY
@@ -73,7 +77,7 @@ const GoogMapContainer = ({
       map.fitBounds(bounds);
     }
     if (points.length <= 1) {
-      setZoom(7);
+      setZoom(initialZoom || 7);
     }
   };
   const onLoad = (map: google.maps.Map) => {
@@ -95,7 +99,7 @@ const GoogMapContainer = ({
       <GoogleMap
         mapContainerStyle={{
           width: "100%",
-          minHeight: "200px",
+          minHeight: "275px",
           height: "100%"
         }}
         id="example-map"

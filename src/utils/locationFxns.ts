@@ -1,5 +1,9 @@
 import { LocationType } from "../components/Locations/location.types";
+import moment from "moment";
+import { AirportResult } from "../apis/amadeus.types";
 
+//
+//
 export const getShortNameFromLoc = (loc: LocationType) => {
   let shortName;
   if (loc.countryShort && loc.countryShort === "US") {
@@ -17,9 +21,9 @@ export const getTimeZoneFromLatLng = async ({
   lng,
   timeStamp
 }: {
-  lat: number;
-  lng: number;
-  timeStamp: number;
+  lat: number | string;
+  lng: number | string;
+  timeStamp: number | string;
 }): Promise<string> => {
   const { REACT_APP_GOOGLE_MAP_API_KEY } = process.env;
   const { timeZoneId } = await fetch(
@@ -27,4 +31,26 @@ export const getTimeZoneFromLatLng = async ({
   ).then(res => res.json());
   console.log("timezone timeZoneId", timeZoneId);
   return timeZoneId;
+};
+
+export const airportResultToLoc = async (ap: any) => {
+  if (ap.locType) return ap;
+  const { cityName, stateCode, countryCode } = ap.address;
+  const { latitude, longitude } = ap.geoCode;
+  const timeZoneId = await getTimeZoneFromLatLng({
+    lat: latitude,
+    lng: longitude,
+    timeStamp: moment().format("X")
+  });
+  return {
+    locType: "airport",
+    address: `${cityName} ${stateCode} ${countryCode}`,
+    lat: latitude,
+    lng: longitude,
+    shortName: `${cityName} ${stateCode} ${countryCode}`,
+    venueName: `${ap.iataCode} airport`,
+    iataCode: ap.iataCode,
+    placeId: ap.iataCode,
+    timeZoneId
+  };
 };

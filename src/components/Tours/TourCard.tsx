@@ -16,6 +16,7 @@ import moment from "moment";
 import TourForm from "./TourForm";
 import TourEvents from "../Events/TourEvents";
 import TourPeople from "../People/TourPeople";
+import TourSchedule from "./TourSchedule";
 import { Tour } from "./types";
 import styled from "styled-components";
 import { TourTravels } from "../Travels/TourTravels";
@@ -45,7 +46,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const TourCard = ({ tour }: { tour: Tour }) => {
-  const [tabIndex, setTabIndex] = useState(2);
+  const [tabIndex, setTabIndex] = useState(0);
   const [expanded, setExpanded] = useState(true);
   const handleSetTab = (e: React.ChangeEvent<{}>, index: number) => {
     setTabIndex(index);
@@ -80,6 +81,7 @@ export const TourCard = ({ tour }: { tour: Tour }) => {
           <RotatingArrowButton
             onClick={() => setExpanded(old => !old)}
             expanded={expanded}
+            direction="ccw"
           />
         }
       />
