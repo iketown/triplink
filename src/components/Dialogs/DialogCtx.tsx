@@ -47,6 +47,19 @@ const dialogReducer = (state = initialState, action) => {
     case "CLOSE_DIALOG": {
       return { ...state, open: false };
     }
+    case "EDIT_TOURS": {
+      return { open: true, formType: "tours" };
+    }
+    case "SEARCH_FLIGHTS": {
+      const { data, handleFieldChange } = action;
+      return {
+        ...state,
+        formType: "flightSearch",
+        data,
+        handleFieldChange,
+        open: true
+      };
+    }
     case "EDIT_EVENT":
     case "CREATE_EVENT": {
       const { initialValues } = action;
@@ -90,6 +103,7 @@ type DialogCtxType = {
 
 // @ts-ignore
 export const DialogCtxProvider = props => {
+  //@ts-ignore
   const [state, dispatch] = useReducer(dialogReducer, initialState);
   return <DialogCtx.Provider value={{ state, dispatch }} {...props} />;
 };

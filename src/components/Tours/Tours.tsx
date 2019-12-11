@@ -8,9 +8,15 @@ import useAuth from "../Account/UserCtx";
 import moment from "moment";
 import { useTours, useFutureTours } from "./useTours";
 import { Tour } from "./types";
+import { Button } from "@material-ui/core";
+import { useDialogCtx } from "../Dialogs/DialogCtx";
 
 const Tours = () => {
   const { futureTours } = useFutureTours();
+  const { state, dispatch } = useDialogCtx();
+  const handleEditTours = () => {
+    dispatch({ type: "EDIT_TOURS", inititalValues: { foo: "bar" } });
+  };
   return (
     <div>
       <Typography variant="h3">TOURS</Typography>
@@ -18,6 +24,9 @@ const Tours = () => {
         return <TourCard key={tour.id} {...{ tour }} />;
       })}
       <NewTourCard />
+      <Button onClick={handleEditTours} variant="contained" color="primary">
+        EDIT TOURS
+      </Button>
       <ShowMe obj={futureTours} noModal name="futureTours" />
     </div>
   );

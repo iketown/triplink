@@ -27,7 +27,7 @@ export const useTimeRangeEvents = (after: string, before: string) => {
   const [events, setEvents] = useState<GeneralEvent[]>([]);
   const { userProfile } = useAuth();
   const { firestore } = useFirebaseCtx();
-
+  console.log("called useTimeRangeEvents");
   useEffect(() => {
     if (userProfile && after && before) {
       const eventsRef = firestore
@@ -36,7 +36,7 @@ export const useTimeRangeEvents = (after: string, before: string) => {
         .where("startDate", "<=", before);
 
       const unsubscribe = eventsRef.onSnapshot(snapshot => {
-        console.log("updating EVENTS");
+        console.log("getting events between", before, after);
         const _events: any = [];
         snapshot.forEach(doc => {
           _events.push({ ...doc.data(), id: doc.id });

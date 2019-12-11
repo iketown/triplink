@@ -1,5 +1,17 @@
 import { AirportResult } from "../../apis/amadeus.types";
 
+export type NearbyAirport = {
+  iataCode: string;
+  detailedName: string;
+  distanceKm: number;
+  relevance: number;
+  city: string;
+  state: string;
+  country: string;
+  lat: number;
+  lng: number;
+};
+
 export type LocationType = {
   placeId: string;
   lat: number;
@@ -15,7 +27,7 @@ export type LocationType = {
   country?: string;
   countryShort?: string;
   id?: string;
-  airports?: AirportResult[];
+  nearbyAirports?: NearbyAirport[];
   locType?: string;
   iataCode?: string;
 };

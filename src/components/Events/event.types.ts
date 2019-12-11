@@ -39,6 +39,7 @@ export type GeneralEvent = {
   memberIds?: string[];
   locBasic?: LocBasicType;
   startLoc: LocBasicType;
+  startLocId?: string;
   endLoc?: LocBasicType; // if travel
   itineraries?: string[];
 };

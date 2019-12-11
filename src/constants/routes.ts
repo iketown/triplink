@@ -11,6 +11,7 @@ import {
 import LandingPage from "../components/Landing/Landing";
 import SignUpPage from "../components/SignUp/SignUp";
 import SignInPage from "../components/SignIn/SignIn";
+import MapPage from "../components/Maps/MapPage";
 import Day from "../components/Day/Day";
 import PasswordForgetPage from "../components/PasswordForget/PasswordForget";
 import HomePage from "../components/Home/Home";
@@ -48,7 +49,8 @@ export const routes = {
   day: "/day/:date",
   timeline: "/timeline/:date",
   calendar: "/calendar",
-  grid: "/grid"
+  grid: "/grid",
+  map: "/map"
 };
 
 export const signedOutRoutes: Route[] = [
@@ -86,10 +88,11 @@ export const appRoutes: Route[] = [
     component: TourSchedule
   },
   { name: "Tours", route: routes.tours, Icon: Star, component: ToursPage },
-  { name: "Travel", route: routes.travel, Icon: Map, component: TravelsPage },
-  { name: "Events", route: routes.events, Icon: Star, component: EventsPage },
-  { name: "People", route: routes.people, Icon: People, component: PeoplePage },
-  { name: "Grid", route: routes.grid, Icon: Star, component: FlightGrid }
+  { name: "Map", route: routes.map, Icon: Map, component: MapPage },
+  // { name: "Travel", route: routes.travel, Icon: Map, component: TravelsPage },
+  // { name: "Events", route: routes.events, Icon: Star, component: EventsPage },
+  { name: "People", route: routes.people, Icon: People, component: PeoplePage }
+  // { name: "Grid", route: routes.grid, Icon: Star, component: FlightGrid }
   // {
   //   name: "Day Sheet",
   //   route: routes.day,

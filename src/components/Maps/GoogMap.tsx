@@ -16,11 +16,13 @@ const GoogMap = ({
   markerLocs = [],
   boundsPoints = [],
   polyLines,
+  flights,
   initialZoom
 }: {
   boundsPoints?: { lat: number; lng: number }[];
   markerLocs?: { lat: number; lng: number }[];
-  polyLines?: { lat: number; lng: number }[][];
+  polyLines?: any[];
+  flights?: { lat: number; lng: number }[][];
   initialZoom?: number;
 }) => {
   return (
@@ -38,12 +40,24 @@ const GoogMap = ({
               ) === index
           )
           .map(loc => {
-            return <FlexMarker position={loc} key={`${loc.lat}${loc.lng}`} />;
+            return (
+              <FlexMarker
+                loc={loc}
+                position={loc}
+                key={`${loc.lat}${loc.lng}`}
+              />
+            );
           })}
 
       {polyLines &&
         polyLines.map(path => {
-          return <FlexPolyline key={JSON.stringify(path)} path={path} />;
+          return (
+            <FlexPolyline
+              key={JSON.stringify(path)}
+              eventId={path.eventId}
+              path={path.path}
+            />
+          );
         })}
     </GoogMapContainer>
   );

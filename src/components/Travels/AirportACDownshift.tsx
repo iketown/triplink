@@ -19,7 +19,7 @@ import ShowMe from "../../utils/ShowMe";
 import { amadeusFxns } from "../../apis/Amadeus";
 import { PlaceType } from "../Forms/googleAC/GooglePlacesAC";
 import { useGoogleAirport } from "./useGoogAirports";
-import { airportResultToLoc } from "../../utils/locationFxns";
+import { airportResultToLoc, useUSAirports } from "../../utils/locationFxns";
 import { LocBasicType } from "../Locations/location.types";
 
 //
@@ -42,13 +42,11 @@ const AirportACDownshift = ({
   initialValue?: string;
 }) => {
   const [airports, setAirports] = useState<(AirportResult | undefined)[]>([]);
-  const [savedAirportsResults, setSavedAirportResults] = useState<
-    AirportResult[]
-  >([]);
+
   const [searchString, setSearchString] = useState(initialValue);
 
   const { getAirportsByKeyword } = amadeusFxns();
-
+  const { getLocalResults, localResults } = useUSAirports();
   const initialAirports = useMemo(() => {
     const _initialAirports =
       closeAirports &&
@@ -73,45 +71,7 @@ const AirportACDownshift = ({
       { maxWait: 500 }
     )
   );
-  const searchLocal = (): boolean => {
-    // get exact match airports "BOS" "MSP"
-    if (searchString && typeof searchString === "string") {
-      const codes: string[] = [];
-      const searchStringLow = searchString.toLowerCase();
-      //@ts-ignore
-      const exactMatch = usAirports.airports[searchString.toUpperCase()];
-      if (exactMatch) codes.push(exactMatch.iataCode);
-      // get cities
-      Object.entries(usAirports.cities).forEach(([city, code]) => {
-        if (city.includes(searchStringLow)) {
-          //@ts-ignore
-          codes.push(code);
-        }
-      });
-      // get states
-      Object.entries(usAirports.states).forEach(([state, apCodes]) => {
-        if (state.includes(searchStringLow)) {
-          //@ts-ignore
-          codes.concat(apCodes);
-        }
-      });
-      Object.entries(usAirports.names).forEach(([name, code]) => {
-        if (name.includes(searchStringLow)) {
-          //@ts-ignore
-          codes.push(code);
-        }
-      });
-      const filteredCodes = codes.filter(
-        (code, i) => codes.findIndex(_code => _code === code) === i
-      );
-      setSavedAirportResults(
-        //@ts-ignore
-        filteredCodes.map(code => usAirports.airports[code])
-      );
-      setAirports([]);
-      return !!filteredCodes.length;
-    } else return true;
-  };
+
   useEffect(() => {
     let active = true;
     if (
@@ -121,7 +81,7 @@ const AirportACDownshift = ({
       searchString !== initialValue
     ) {
       // first check local
-      if (!searchLocal()) {
+      if (!getLocalResults(searchString)) {
         dbApCall.current(searchString, active);
       }
     }
@@ -129,10 +89,18 @@ const AirportACDownshift = ({
       active = false;
     };
   }, [searchString, initialAirports]);
+  useEffect(() => {
+    if (localResults && localResults.length && airports.length) {
+      setAirports([]);
+    }
+  }, [localResults, airports]);
+
   const handleSelect = async (ap: any) => {
     console.log("airport", ap);
+    if (!ap) return null;
     let formatAP;
-    if (!ap.locType) {
+
+    if (ap.locType) {
       formatAP = ap;
     } else {
       formatAP = await airportResultToLoc(ap);
@@ -166,13 +134,13 @@ const AirportACDownshift = ({
             <Grid container {...getRootProps()}>
               <Grid item xs={12}>
                 <TextField
+                  onClick={e => {
+                    e.stopPropagation();
+                  }}
                   fullWidth
                   error={meta && meta.dirty && !!meta.error}
                   helperText={meta && meta.dirty && meta.error}
-                  label={
-                    label ||
-                    (arriving ? "search TO airport" : "search FROM airport")
-                  }
+                  label={label || (arriving ? "TO" : "FROM")}
                   {...getInputProps()}
                   InputProps={{
                     endAdornment: (
@@ -191,7 +159,7 @@ const AirportACDownshift = ({
                     overflow: "scroll"
                   }}
                 >
-                  {savedAirportsResults.map((ap, index) => {
+                  {[...localResults, ...airports].map((ap, index) => {
                     if (!ap) return null;
                     return (
                       <AirportListItem
@@ -201,7 +169,7 @@ const AirportACDownshift = ({
                       />
                     );
                   })}
-                  {airports.map((ap, index) => {
+                  {/* {airports.map((ap, index) => {
                     if (!ap) return null;
                     return (
                       <AirportListItem
@@ -210,7 +178,7 @@ const AirportACDownshift = ({
                         {...{ ap, index, highlightedIndex, getItemProps }}
                       />
                     );
-                  })}
+                  })} */}
                   <ListSubheader>airports near tour events</ListSubheader>
                   {initialAirports
                     .filter(

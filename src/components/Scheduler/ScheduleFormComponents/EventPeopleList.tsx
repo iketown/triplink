@@ -230,7 +230,11 @@ const PersonGroupListItem = ({
         {group.members &&
           group.members.map(memberId => {
             return (
-              <PersonListItem personId={memberId} {...{ state, dispatch }} />
+              <PersonListItem
+                key={memberId}
+                personId={memberId}
+                {...{ state, dispatch }}
+              />
             );
           })}
       </Collapse>

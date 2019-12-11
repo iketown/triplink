@@ -4,8 +4,9 @@ import EventDialog from "../Events/EventDialog";
 import EventDialogNew from "../Events/EventDialogNew";
 import TravelDialog from "../Travels/TravelDialog";
 import HotelDialog from "../Hotels/HotelDialog";
+import EditTours from "../Tours/EditTours";
 import { useDialogCtx } from "./DialogCtx";
-
+import FlightSearch from "../Scheduler/EventForms/FlightSearch";
 import GooglePlaceAC from "../Forms/googleAC/GooglePlacesAC";
 export const DialogContainer = () => {
   const { state, dispatch } = useDialogCtx();
@@ -14,6 +15,8 @@ export const DialogContainer = () => {
   };
   const { initialValues } = state;
   const contents = {
+    flightSearch: <FlightSearch />,
+    tours: <EditTours />,
     event: (
       <EventDialogNew initialValues={initialValues} handleClose={handleClose} />
     ),

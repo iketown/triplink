@@ -6,7 +6,6 @@ import ShowMe from "../../utils/ShowMe";
 import { amadeusFxns } from "../../apis/Amadeus";
 import DestinationAirportsPicker from "./DestinationAirportsPicker";
 import { Form, Field } from "react-final-form";
-import FlightForm from "./FlightForm";
 //
 //
 const TravelDialog = ({ initialValues, handleClose }: ITravelDialog) => {
@@ -18,13 +17,8 @@ const TravelDialog = ({ initialValues, handleClose }: ITravelDialog) => {
   const getForm = () => {
     switch (state.travelType) {
       case TravelTypes.air:
-        return <FlightForm />;
       default:
-        return (
-          <>
-            <FlightForm />
-          </>
-        );
+        return <div />;
     }
   };
   return (

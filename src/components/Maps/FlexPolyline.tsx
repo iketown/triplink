@@ -1,17 +1,22 @@
 import React from "react";
 import { Polyline, PolylineProps, Polygon } from "@react-google-maps/api";
+import { useMapCtx } from "./MapCtx";
 
-interface PolyLinePropsExtended extends PolylineProps {}
+interface PolyLinePropsExtended extends PolylineProps {
+  eventId: string;
+}
 
 const FlexPolyline = (props: PolyLinePropsExtended) => {
-  const { path } = props;
-  const arrow = {};
+  const { path, eventId } = props;
+  const { selectedId, setSelectedId } = useMapCtx();
+  const selected = selectedId === eventId;
+
   return (
     <Polyline
       {...{ path }}
       options={{
         strokeWeight: 1,
-        strokeColor: "grey",
+        strokeColor: selected ? "orange" : "grey",
         geodesic: true,
         icons: [
           {

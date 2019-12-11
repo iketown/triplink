@@ -10,6 +10,7 @@ import { TourEvent, GeneralEvent } from "../Events/event.types";
 import { Person } from "../People/people.types";
 import { amadeusFxns } from "../../apis/Amadeus";
 import { removeMissing } from "../../utils/general";
+import { ContactsOutlined } from "@material-ui/icons";
 //
 //
 const config =
@@ -106,12 +107,29 @@ class Firebase {
         });
         return _foundLocs;
       });
-
-    if (previousLocs) {
+    if (previousLocs && previousLocs[0] && previousLocs[0].nearbyAirports) {
       console.log("reusing prev LOC", loc);
       return previousLocs[0];
     } else {
       console.log("creating NEW LOC", loc);
+      const { getAirportsNearPoint } = amadeusFxns();
+      const airports = await getAirportsNearPoint(loc.lat, loc.lng);
+      console.log("nearby airports raw", airports);
+      if (airports) {
+        loc.nearbyAirports = airports
+          .filter(ap => ap.distance.value < 400 && ap.relevance > 10)
+          .map(ap => ({
+            iataCode: ap.iataCode,
+            detailedName: ap.detailedName,
+            distanceKm: ap.distance.value,
+            relevance: ap.relevance,
+            city: ap.address.cityCode,
+            state: ap.address.stateCode,
+            country: ap.address.countryCode || ap.address.countryName,
+            lat: ap.geoCode.latitude,
+            lng: ap.geoCode.longitude
+          }));
+      }
       return locRef
         .add(loc)
         .then(doc => doc.get())
@@ -174,6 +192,12 @@ class Firebase {
     if (event.startLoc) {
       const startLoc = await this.doCreateLocation(event.startLoc);
       console.log("startLoc populated", startLoc);
+    }
+    if (event.endLoc) {
+      const endLoc = await this.doCreateLocation(event.endLoc);
+      console.log("endLoc populated", endLoc);
+      //@ts-ignore
+      if (endLoc) event.endLoc = endLoc;
     }
     return (
       eventsRef &&
