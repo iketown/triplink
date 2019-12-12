@@ -133,6 +133,9 @@ const FlightForm = () => {
       <Full>
         <GoogMap polyLines={polyLines} boundsPoints={markerLocs} />
       </Full>
+      <Full>
+        <ShowMe obj={polyLines} name="polyLines" noModal />
+      </Full>
     </>
   );
 };

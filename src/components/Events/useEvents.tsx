@@ -9,12 +9,16 @@ import { amadeusFxns } from "../../apis/Amadeus";
 //
 
 const getHourRange = (events: any[]) => {
+  if (!events || !events.length) return { earliestHour: 0, latestHour: 24 };
   let earliestHour = 24;
   let latestHour = 0;
   events.forEach(event => {
     const startHour = moment(event.startDate).hour();
     const endHour = moment(event.endDate).hour();
-    if (event.allDay) return;
+    if (event.allDay) {
+      earliestHour = Math.min(earliestHour, 11);
+      latestHour = Math.max(latestHour, 17);
+    }
     if (startHour < earliestHour) earliestHour = startHour;
     if (startHour > latestHour) latestHour = startHour;
     if (endHour > latestHour) latestHour = endHour;
@@ -27,9 +31,9 @@ export const useTimeRangeEvents = (after: string, before: string) => {
   const [events, setEvents] = useState<GeneralEvent[]>([]);
   const { userProfile } = useAuth();
   const { firestore } = useFirebaseCtx();
-  console.log("called useTimeRangeEvents");
+
   useEffect(() => {
-    if (userProfile && after && before) {
+    if (userProfile) {
       const eventsRef = firestore
         .collection(`/accounts/${userProfile.currentAccount}/events`)
         .where("startDate", ">=", after)
@@ -45,6 +49,7 @@ export const useTimeRangeEvents = (after: string, before: string) => {
           _events.sort((a: any, b: any) => (a.startTime < b.startTime ? -1 : 1))
         );
       });
+
       return unsubscribe;
     }
   }, [firestore, before, after, userProfile]);

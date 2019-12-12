@@ -1,13 +1,19 @@
 import React from "react";
 import { Polyline, PolylineProps, Polygon } from "@react-google-maps/api";
 import { useMapCtx } from "./MapCtx";
+import { GeneralEvent } from "../Events/event.types";
 
+//
+//
 interface PolyLinePropsExtended extends PolylineProps {
   eventId: string;
+  path: { lat: number; lng: number }[];
+  flight?: GeneralEvent;
 }
 
 const FlexPolyline = (props: PolyLinePropsExtended) => {
-  const { path, eventId } = props;
+  const { path, eventId, flight } = props;
+
   const { selectedId, setSelectedId } = useMapCtx();
   const selected = selectedId === eventId;
 

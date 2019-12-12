@@ -12,6 +12,7 @@ import LandingPage from "../components/Landing/Landing";
 import SignUpPage from "../components/SignUp/SignUp";
 import SignInPage from "../components/SignIn/SignIn";
 import MapPage from "../components/Maps/MapPage";
+import MapPage2 from "../components/Maps/MapPage2";
 import Day from "../components/Day/Day";
 import PasswordForgetPage from "../components/PasswordForget/PasswordForget";
 import HomePage from "../components/Home/Home";
@@ -50,7 +51,8 @@ export const routes = {
   timeline: "/timeline/:date",
   calendar: "/calendar",
   grid: "/grid",
-  map: "/map"
+  map: "/map",
+  map2: "/map2"
 };
 
 export const signedOutRoutes: Route[] = [
@@ -89,6 +91,7 @@ export const appRoutes: Route[] = [
   },
   { name: "Tours", route: routes.tours, Icon: Star, component: ToursPage },
   { name: "Map", route: routes.map, Icon: Map, component: MapPage },
+  { name: "Map2", route: routes.map2, Icon: Map, component: MapPage2 },
   // { name: "Travel", route: routes.travel, Icon: Map, component: TravelsPage },
   // { name: "Events", route: routes.events, Icon: Star, component: EventsPage },
   { name: "People", route: routes.people, Icon: People, component: PeoplePage }

@@ -24,6 +24,9 @@ const MapPageEventsProvider = () => {
       .format()
   );
   const { events } = useTimeRangeEvents(firstDate, lastDate);
+  useEffect(() => {
+    console.log("firstDate", moment(firstDate).unix());
+  }, [firstDate]);
   return (
     <MapPage {...{ firstDate, lastDate, setFirstDate, setLastDate, events }} />
   );
@@ -46,6 +49,10 @@ const MapPage = ({
     min: number;
     max: number;
   }>();
+  const [sliderUnix, setSliderUnix] = useState([
+    moment(firstDate).unix(),
+    moment(lastDate).unix()
+  ]);
   const reverseEvents = useMemo(() => {
     return events.reverse();
   }, [events]);
@@ -64,6 +71,13 @@ const MapPage = ({
   useEffect(() => {
     if (events && events.length && !sliderRange) {
       setSliderRange({ min: 0, max: events.length });
+      const firstUnix = moment(events[0].startTime)
+        .subtract(1, "day")
+        .unix();
+      const lastUnix = moment(events[events.length - 1])
+        .add(1, "day")
+        .unix();
+      setSliderUnix([firstUnix, lastUnix]);
     }
   }, [sliderRange, events]);
   return (
@@ -95,22 +109,25 @@ const MapPage = ({
                 onChange={(e, val) => {
                   console.log("val", val);
                   if (typeof val === "object") {
-                    const [min, max] = val;
-                    setSliderRange({ min, max });
+                    // const [min, max] = val;
+                    // setSliderRange({ min, max });
+                    setSliderUnix(val);
                   }
                 }}
-                defaultValue={
-                  sliderRange ? [sliderRange.min, sliderRange.max] : [0, 0]
-                }
-                value={[sliderRange.min, sliderRange.max]}
+                defaultValue={sliderUnix}
+                value={sliderUnix}
                 orientation="vertical"
-                min={0}
-                max={events.length}
+                min={moment(firstDate)
+                  .subtract(1, "day")
+                  .unix()}
+                max={moment(lastDate)
+                  .add(1, "day")
+                  .unix()}
                 marks={
                   reverseEvents &&
                   reverseEvents.map((event, index) => {
                     return {
-                      value: index,
+                      value: moment(event.startDate).unix(),
                       label: <SliderLabel {...{ event }} />
                     };
                   })

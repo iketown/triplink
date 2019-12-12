@@ -43,7 +43,11 @@ const TourSchedule = () => {
   const [currentViewName, setCurrentViewName] = useState("");
   const { allPeople } = usePeople();
   const [currentDate, setCurrentDate] = useState(moment().format());
-  const { events, hourRange } = useMonthEvents("2019-12");
+  const { events, hourRange } = useMonthEvents(
+    moment(currentDate)
+      .startOf("month")
+      .format("YYYY-MM")
+  );
   const { doEditEvent, doCreateEvent, doDeleteEvent } = useFirebaseCtx();
 
   const [resources, setResources] = useState<any[]>([]);

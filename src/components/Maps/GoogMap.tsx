@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useEffect, useState } from "react";
+import React, { memo, useCallback, useRef, useEffect, useState } from "react";
+import { isEqual } from "lodash";
 import {
   GoogleMap,
   useLoadScript,
@@ -10,10 +11,12 @@ import {
 import { CircularProgress } from "@material-ui/core";
 import FlexMarker from "./FlexMarker";
 import FlexPolyline from "./FlexPolyline";
+import { GeneralEvent } from "../Events/event.types";
 // docs -> https://react-google-maps-api-docs.netlify.com/
 
 const GoogMap = ({
   markerLocs = [],
+  gigs = [],
   boundsPoints = [],
   polyLines,
   flights,
@@ -21,15 +24,28 @@ const GoogMap = ({
 }: {
   boundsPoints?: { lat: number; lng: number }[];
   markerLocs?: { lat: number; lng: number }[];
+  gigs?: GeneralEvent[];
+  flights?: GeneralEvent[];
   polyLines?: any[];
-  flights?: { lat: number; lng: number }[][];
   initialZoom?: number;
 }) => {
+  console.log("rendering map");
   return (
     <GoogMapContainer
       points={[...markerLocs, ...boundsPoints]}
       initialZoom={initialZoom}
     >
+      {gigs &&
+        gigs.map(gig => {
+          return (
+            <FlexMarker
+              event={gig}
+              loc={gig.startLoc}
+              position={gig.startLoc}
+              key={gig.id}
+            />
+          );
+        })}
       {markerLocs &&
         markerLocs
           // remove duplicates
@@ -55,8 +71,22 @@ const GoogMap = ({
             <FlexPolyline
               key={JSON.stringify(path)}
               eventId={path.eventId}
-              path={path.path}
+              path={path}
             />
+          );
+        })}
+      {flights &&
+        flights.map(flight => {
+          return (
+            flight.startLoc &&
+            flight.endLoc &&
+            flight.id && (
+              <FlexPolyline
+                key={flight.id}
+                eventId={flight.id}
+                path={[flight.startLoc, flight.endLoc]}
+              />
+            )
           );
         })}
     </GoogMapContainer>
@@ -130,4 +160,8 @@ const GoogMapContainer = ({
   return true ? renderMap() : <CircularProgress />;
 };
 
-export default GoogMap;
+const propsEqual = (prev: any, next: any) => {
+  const yesEqual = isEqual(prev, next);
+  return yesEqual;
+};
+export default memo(GoogMap, propsEqual);
