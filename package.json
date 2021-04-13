@@ -70,7 +70,7 @@
     "styled-components": "4.4.1",
     "typescript": "3.6.4",
     "vis": "4.21.0-EOL",
-    "vis-timeline": "6.2.4"
+    "vis-timeline": "7.4.4"
   },
   "scripts": {
     "start": "react-scripts start",
