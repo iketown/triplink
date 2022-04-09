@@ -46,7 +46,7 @@
     "lodash": "4.17.15",
     "material-table": "1.54.1",
     "material-ui-autocomplete-google-places": "2.3.0",
-    "moment": "2.24.0",
+    "moment": "2.29.2",
     "moment-timezone": "0.5.27",
     "prop-types": "15.7.2",
     "react": "^16.11.0",
