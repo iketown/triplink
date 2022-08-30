@@ -47,7 +47,7 @@
     "material-table": "1.54.1",
     "material-ui-autocomplete-google-places": "2.3.0",
     "moment": "2.24.0",
-    "moment-timezone": "0.5.27",
+    "moment-timezone": "0.5.35",
     "prop-types": "15.7.2",
     "react": "^16.11.0",
     "react-autocomplete": "1.8.1",
